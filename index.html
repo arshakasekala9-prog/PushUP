@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05070f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>SYSTEM - Push Up Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#05070f;--panel:#0a1226;--line:#2b6dff;--glow:#4aa3ff;--txt:#dce8ff;--dim:#7d90b8;--ok:#3de0a0;--warn:#ffc857;--bad:#ff5c7a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0d1a3d 0,#05070f 420px),#05070f;color:var(--txt);font-family:Orbitron,"Segoe UI",Arial,sans-serif;font-size:14px;min-height:100vh;overscroll-behavior:none}
+#app{max-width:520px;margin:0 auto;padding:14px 14px 90px}
+.panel{background:linear-gradient(180deg,rgba(14,28,64,.85),rgba(8,16,36,.9));border:1px solid var(--line);padding:14px;margin-bottom:14px;position:relative}
+.panel>h3,.tag{margin:0 0 10px;font-size:12px;letter-spacing:2px;color:var(--glow);text-transform:uppercase}
+.panel>h3::before{content:"[ ";color:var(--dim)}.panel>h3::after{content:" ]";color:var(--dim)}
+.title{text-align:center;letter-spacing:4px;font-weight:900;font-size:20px;color:#fff;text-shadow:0 0 12px var(--glow);margin:6px 0 16px}
+label{display:block;font-size:11px;color:var(--dim);letter-spacing:1px;margin:10px 0 4px}
+input,select{width:100%;background:#050b1c;border:1px solid var(--line);color:#fff;padding:11px;font:inherit;font-size:15px;outline:none}
+input:focus{box-shadow:0 0 8px var(--glow)}
+button{font:inherit;background:transparent;color:#fff;border:1px solid var(--glow);padding:11px 14px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-size:12px}
+button:hover,button.on{background:rgba(74,163,255,.2);box-shadow:0 0 10px var(--glow)}
+button.big{width:100%;padding:15px;font-size:14px;font-weight:700}
+button:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
+button.danger{border-color:var(--bad);color:var(--bad)}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+.grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.diff{padding:10px;text-align:left}.diff small{display:block;color:var(--dim);font-size:10px;margin-top:3px;text-transform:none;letter-spacing:0}
+.bar{height:10px;background:#0a1330;border:1px solid #1d3a80;margin:6px 0 2px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#1f58ff,#4aa3ff);box-shadow:0 0 8px var(--glow);transition:none}
+.bar.q>i{background:linear-gradient(90deg,#17a673,var(--ok))}
+.small{font-size:11px;color:var(--dim)}
+.rank{width:78px;height:78px;border:2px solid var(--glow);display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:900;text-shadow:0 0 14px var(--glow);box-shadow:0 0 16px var(--line),inset 0 0 14px rgba(43,109,255,.4);flex:none}
+.rank.S{color:var(--warn);border-color:var(--warn);text-shadow:0 0 14px var(--warn)}
+.head{display:flex;gap:14px;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stats b{display:block;font-size:17px;color:#fff}.stats span{font-size:10px;color:var(--dim);letter-spacing:1px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#050a18;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;border:0;border-right:1px solid #12306e;padding:15px 2px;font-size:11px;color:var(--dim)}
+nav button.on{color:#fff;background:rgba(74,163,255,.18);box-shadow:inset 0 2px 0 var(--glow)}
+.mv{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #12306e}
+.mv:last-child{border:0}.mv .n{font-weight:700}.mv input{width:80px;text-align:center;padding:9px}
+.lock{opacity:.5}
+.rw{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #12306e;align-items:center}
+.rw.open .st{color:var(--ok)}.rw .st{font-size:11px;color:var(--dim);white-space:nowrap}
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:8px}.photos img{width:100%;aspect-ratio:3/4;object-fit:cover;border:1px solid var(--line);background:#000}
+.photos div{text-align:center;font-size:10px;color:var(--dim)}
+#ov{position:fixed;inset:0;background:rgba(2,4,10,.96);z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+#ov.show{display:flex}
+#cnt{font-size:110px;font-weight:900;color:#fff;text-shadow:0 0 24px var(--glow);line-height:1}
+#stat{margin:10px 0;font-size:16px;letter-spacing:3px}
+.near{color:var(--ok)}.far{color:var(--glow)}
+.pop{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(2,6,20,.88);padding:20px}
+.pop.show{display:flex}.pop .panel{text-align:center;width:100%;max-width:380px;animation:shake .5s}
+.pop h2{font-size:26px;margin:6px 0;color:#fff;text-shadow:0 0 16px var(--glow);letter-spacing:3px}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+#toast{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:#0a1a44;border:1px solid var(--glow);padding:10px 16px;z-index:40;display:none;font-size:12px;box-shadow:0 0 14px var(--glow);max-width:90%;text-align:center}
+.pv{width:120px;aspect-ratio:3/4;object-fit:cover;border:1px solid var(--line);display:none;margin-top:8px}
+video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="ov"></div>
+<div class="pop" id="pop"></div>
+<div id="toast"></div>
+<script>
+const RANKS=['E','D','C','B','A','S'];
+const STEPS={easy:[600,900,1250,1600,2350],medium:[1300,2100,3000,5000,8400],hard:[2500,3800,6700,10500,15100],extreme:[5000,8400,12600,20000,33600]};
+const DIFF={easy:{n:'Easy',t:50,d:'Target 50/hari'},medium:{n:'Medium',t:100,d:'Target 100/hari'},hard:{n:'Hard',t:200,d:'Target 200/hari'},extreme:{n:'Extreme',t:300,d:'Target 300/hari'}};
+const MOVES=[
+ {id:'pushup',n:'Push Up',u:'repetisi',x:1,min:'easy',rank:0},
+ {id:'curl',n:'Dumbbell Curl',u:'repetisi',x:0.8,min:'easy',rank:0},
+ {id:'row',n:'Row (Back)',u:'repetisi',x:1.2,min:'easy',rank:2,rankOnlyEasy:true},
+ {id:'press',n:'Shoulder Press',u:'repetisi',x:1.2,min:'medium',rank:0},
+ {id:'tread',n:'Treadmill',u:'menit',x:8,min:'medium',rank:0}];
+const ORD=['easy','medium','hard','extreme'];
+const $=s=>document.querySelector(s);
+const today=()=>new Date().toLocaleDateString('en-CA');
+let S=null,tab='status',draft={diff:'easy',photo:null};
+try{S=JSON.parse(localStorage.getItem('sysq')||'null')}catch(e){}
+function save(){try{localStorage.setItem('sysq',JSON.stringify(S))}catch(e){toast('Penyimpanan penuh, foto mungkin tidak tersimpan')}}
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---- game logic ---- */
+const levelOf=x=>Math.floor(Math.sqrt(x/50))+1;
+const levelStart=l=>50*(l-1)*(l-1);
+function rankOf(x,d){const st=STEPS[d];let c=0,r=0;for(let i=0;i<st.length;i++){c+=st[i];if(x>=c)r=i+1}return r}
+function rankBounds(x,d){const st=STEPS[d];let c=0;for(let i=0;i<st.length;i++){if(x<c+st[i])return[c,c+st[i]];c+=st[i]}return[c,c]}
+function unlocked(m,st=S){const di=ORD.indexOf(st.diff);if(di<ORD.indexOf(m.min))return false;
+ if(m.rankOnlyEasy&&st.diff==='easy')return rankOf(st.exp,st.diff)>=m.rank;return true}
+function dayRec(){const k=today();return S.days[k]||(S.days[k]={pushup:0,exp:0})}
+function addReps(id,n){
+ if(!n||n<=0)return;const m=MOVES.find(x=>x.id===id),before={l:levelOf(S.exp),r:rankOf(S.exp,S.diff),open:MOVES.filter(x=>unlocked(x)).map(x=>x.id)};
+ const day=dayRec();let gain=0;
+ if(id==='pushup'){const t=DIFF[S.diff].t;for(let i=1;i<=n;i++)gain+=(day.pushup+i>t)?1.5:1;day.pushup+=n;if(day.pushup>S.record)S.record=day.pushup}
+ else gain=n*m.x;
+ gain=Math.round(gain*10)/10;S.exp=Math.round((S.exp+gain)*10)/10;day.exp=Math.round((day.exp+gain)*10)/10;
+ save();toast(`+${gain} EXP  (${m.n} x ${n})`);
+ const after={l:levelOf(S.exp),r:rankOf(S.exp,S.diff)};const q=[];
+ if(after.r>before.r)q.push(['RANK UP!',`Rank ${RANKS[before.r]} → ${RANKS[after.r]}`,'']);
+ MOVES.filter(x=>unlocked(x)&&!before.open.includes(x.id)).forEach(x=>q.push(['GERAKAN BARU',x.n,'Gerakan baru terbuka!']));
+ if(after.l>before.l){q.push(['LEVEL UP!',`Level ${before.l} → ${after.l}`,'']);
+  S.rewards.filter(r=>r.lv>before.l&&r.lv<=after.l).forEach(r=>q.push(['HADIAH TERBUKA!',`Level ${r.lv}`,esc(r.text)]))}
+ showQ(q);render();
+}
+function showQ(q){if(!q.length)return;const[h,a,b]=q.shift();const p=$('#pop');
+ p.innerHTML=`<div class="panel"><div class="tag">[ SYSTEM ]</div><h2>${h}</h2><div style="font-size:18px;margin:8px 0">${a}</div><div class="small" style="margin-bottom:14px">${b}</div><button class="big" id="pok">OK</button></div>`;
+ p.classList.add('show');beep(880,.15);if(navigator.vibrate)navigator.vibrate([80,40,80]);
+ $('#pok').onclick=()=>{p.classList.remove('show');showQ(q)}}
+
+/* ---- audio ---- */
+let AC;function beep(f=660,d=.08){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.type='square';g.gain.value=.06;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+
+/* ---- photo ---- */
+function readPhoto(file){return new Promise(res=>{if(!file)return res(null);const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,520/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};im.onerror=()=>res(null);im.src=r.result};r.readAsDataURL(file)})}
+
+/* ---- views ---- */
+function render(){const a=$('#app');S?main(a):register(a)}
+function register(a){
+ a.innerHTML=`<div class="title">PLAYER REGISTRATION</div>
+ <div class="panel"><h3>Data Pemain</h3>
+ <label>NAMA</label><input id="rn" placeholder="Nama pemain" value="${esc(draft.name||'')}">
+ <div class="row"><div><label>TINGGI (CM)</label><input id="rh" type="number" inputmode="decimal" value="${draft.h||''}"></div><div><label>BERAT (KG)</label><input id="rw" type="number" inputmode="decimal" value="${draft.w||''}"></div></div>
+ <label>FOTO FULL BODY (WAJIB, UNTUK PERBANDINGAN)</label><input id="rp" type="file" accept="image/*"><img class="pv" id="pv" ${draft.photo?`src="${draft.photo}" style="display:block"`:''}></div>
+ <div class="panel"><h3>Tingkat Kesulitan</h3><div class="grid4">${ORD.map(k=>`<button class="diff ${draft.diff===k?'on':''}" data-d="${k}">${DIFF[k].n}<small>${DIFF[k].d}<br>Total ke S: ${STEPS[k].reduce((x,y)=>x+y).toLocaleString('id')} EXP</small></button>`).join('')}</div>
+ <div class="small" style="margin-top:8px">Easy: Curl, Row (setelah rank C). Medium ke atas: semua gerakan terbuka dari awal.</div></div>
+ <button class="big" id="go">Mulai Sistem</button>`;
+ const keep=()=>{draft.name=$('#rn').value;draft.h=$('#rh').value;draft.w=$('#rw').value};
+ a.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{keep();draft.diff=b.dataset.d;register(a)});
+ $('#rp').onchange=async e=>{draft.photo=await readPhoto(e.target.files[0]);const p=$('#pv');if(draft.photo){p.src=draft.photo;p.style.display='block'}};
+ $('#go').onclick=()=>{keep();const h=+draft.h,w=+draft.w;
+  if(!draft.name.trim())return toast('Isi nama dulu');if(!(h>50&&h<260))return toast('Tinggi tidak valid');if(!(w>20&&w<400))return toast('Berat tidak valid');if(!draft.photo)return toast('Foto full body wajib diisi');
+  S={name:draft.name.trim(),h,w,diff:draft.diff,exp:0,record:0,days:{},rewards:[],photos:[{d:today(),w,img:draft.photo}]};save();draft={diff:'easy',photo:null};tab='status';render()}}
+
+function main(a){
+ const r=rankOf(S.exp,S.diff),lv=levelOf(S.exp),dr=DIFF[S.diff];
+ let body='';
+ if(tab==='status')body=statusView(r,lv);
+ if(tab==='train')body=trainView();
+ if(tab==='reward')body=rewardView(lv);
+ if(tab==='prog')body=progView();
+ a.innerHTML=`<div class="title">SYSTEM</div>${body}
+ <nav>${[['status','Status'],['train','Latihan'],['reward','Hadiah'],['prog','Progres']].map(([k,n])=>`<button data-t="${k}" class="${tab===k?'on':''}">${n}</button>`).join('')}</nav>`;
+ a.querySelectorAll('nav [data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();scrollTo(0,0)});
+ bind();
+}
+function statusView(r,lv){
+ const[a0,a1]=rankBounds(S.exp,S.diff),ls=levelStart(lv),le=levelStart(lv+1),day=dayRec(),t=DIFF[S.diff].t,bmi=(S.w/((S.h/100)**2)).toFixed(1);
+ const rp=r>=5?100:(S.exp-a0)/(a1-a0)*100,lp=(S.exp-ls)/(le-ls)*100,dp=Math.min(100,day.pushup/t*100);
+ return `<div class="panel"><h3>Player Status</h3><div class="head"><div class="rank ${RANKS[r]}">${RANKS[r]}</div><div style="flex:1"><div style="font-size:18px;font-weight:700">${esc(S.name)}</div><div class="small">${DIFF[S.diff].n} · Level ${lv}</div><div class="small">EXP total: ${S.exp.toLocaleString('id')}</div></div></div></div>
+ <div class="panel"><h3>Progres</h3><div class="small">LEVEL ${lv} → ${lv+1} (${Math.floor(S.exp-ls)}/${le-ls})</div><div class="bar"><i style="width:${lp}%"></i></div>
+ <div class="small" style="margin-top:10px">${r>=5?'RANK S TERCAPAI':`RANK ${RANKS[r]} → ${RANKS[r+1]} (${Math.floor(S.exp-a0)}/${a1-a0})`}</div><div class="bar"><i style="width:${rp}%"></i></div></div>
+ <div class="panel"><h3>Daily Quest</h3><div style="font-size:16px">Push Up: ${day.pushup}/${t}</div><div class="bar q"><i style="width:${dp}%"></i></div>
+ <div class="small">${day.pushup>=t?'Quest selesai! Push up berikutnya dapat bonus EXP 1,5x.':'Di atas target dapat bonus EXP 1,5x. Di bawah target tetap dapat EXP normal.'}</div></div>
+ <div class="panel"><h3>Atribut</h3><div class="stats"><div><b>${S.h}</b><span>TINGGI CM</span></div><div><b>${S.w}</b><span>BERAT KG</span></div><div><b>${bmi}</b><span>BMI</span></div><div><b>${S.record}</b><span>REKOR/HARI</span></div><div><b>${day.exp}</b><span>EXP HARI INI</span></div><div><b>${Object.keys(S.days).length}</b><span>HARI AKTIF</span></div></div></div>`}
+function trainView(){
+ const r=rankOf(S.exp,S.diff);
+ return `<div class="panel"><h3>Push Up Otomatis</h3><div class="small" style="margin-bottom:10px">Taruh HP di lantai, layar menghadap atas, tepat di bawah dada. Kamera depan membaca bayangan/gelap saat dada turun, tanpa perlu menyentuh layar.</div><button class="big" id="auto">Mulai Hitung Otomatis</button></div>
+ <div class="panel"><h3>Input Manual</h3>${MOVES.map(m=>{const ok=unlocked(m);return `<div class="mv ${ok?'':'lock'}"><div><div class="n">${m.n}</div><div class="small">${ok?`${m.x} EXP / ${m.u==='menit'?'menit':'rep'}`:m.rankOnlyEasy&&ORD.indexOf(S.diff)>=0&&S.diff==='easy'?`[Terkunci] Capai Rank ${RANKS[m.rank]}`:`[Terkunci] Khusus ${DIFF[m.min].n} ke atas`}</div></div>
+ ${ok?`<div class="row" style="flex:none"><input type="number" inputmode="numeric" min="1" id="in-${m.id}" placeholder="${m.u==='menit'?'menit':'rep'}"><button data-add="${m.id}">+</button></div>`:'<span>🔒</span>'}</div>`}).join('')}</div>`}
+function rewardView(lv){
+ const rs=[...S.rewards].sort((a,b)=>a.lv-b.lv);
+ return `<div class="panel"><h3>Tambah Hadiah</h3><div class="row"><input id="rl" type="number" inputmode="numeric" placeholder="Level" style="flex:.5"><input id="rt" placeholder="Hadiah, mis. makan es krim"></div><button class="big" id="radd" style="margin-top:10px">Simpan Hadiah</button></div>
+ <div class="panel"><h3>Daftar Hadiah (Level kamu: ${lv})</h3>${rs.length?rs.map(r=>`<div class="rw ${lv>=r.lv?'open':''}"><div><b>Level ${r.lv}</b><div>${esc(r.text)}</div></div><div class="st">${lv>=r.lv?'TERBUKA ✔':'Terkunci'}<br><button data-del="${r.id}" class="danger" style="padding:4px 8px;margin-top:4px">Hapus</button></div></div>`).join(''):'<div class="small">Belum ada hadiah.</div>'}</div>`}
+function progView(){
+ const f=S.photos[0],l=S.photos[S.photos.length-1],keys=Object.keys(S.days).sort().slice(-7).reverse();
+ return `<div class="panel"><h3>Perbandingan Foto</h3><div class="photos"><div><img src="${f.img}"><br>AWAL · ${f.d}<br>${f.w} kg</div><div>${S.photos.length>1?`<img src="${l.img}"><br>TERBARU · ${l.d}<br>${l.w} kg`:'<div class="small" style="padding:60px 6px">Tambah foto progres untuk dibandingkan</div>'}</div></div>
+ ${S.photos.length>1?`<div class="small" style="margin-top:8px;text-align:center">Perubahan berat: ${(l.w-f.w>0?'+':'')}${(l.w-f.w).toFixed(1)} kg</div>`:''}</div>
+ <div class="panel"><h3>Foto Progres Baru</h3><label>BERAT SEKARANG (KG)</label><input id="pw" type="number" inputmode="decimal" value="${S.w}"><label>FOTO FULL BODY</label><input id="pf" type="file" accept="image/*"><button class="big" id="padd" style="margin-top:10px">Simpan Foto</button></div>
+ <div class="panel"><h3>7 Hari Terakhir</h3>${keys.length?keys.map(k=>`<div class="mv"><span>${k}</span><span>${S.days[k].pushup} push up · ${S.days[k].exp} EXP</span></div>`).join(''):'<div class="small">Belum ada latihan.</div>'}</div>
+ <div class="panel"><h3>Pengaturan</h3><button class="danger big" id="reset">Reset Semua Data</button></div>`}
+
+function bind(){
+ const g=id=>document.getElementById(id);
+ if(g('auto'))g('auto').onclick=startCounter;
+ document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const i=g('in-'+b.dataset.add),n=parseFloat(i.value);if(!(n>0))return toast('Isi jumlah dulu');addReps(b.dataset.add,n);i.value=''});
+ if(g('radd'))g('radd').onclick=()=>{const lv=parseInt(g('rl').value),t=g('rt').value.trim();if(!(lv>0)||!t)return toast('Isi level dan hadiah');S.rewards.push({id:Date.now(),lv,text:t});save();render()};
+ document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{S.rewards=S.rewards.filter(r=>r.id!=b.dataset.del);save();render()});
+ if(g('padd'))g('padd').onclick=async()=>{const img=await readPhoto(g('pf').files[0]),w=parseFloat(g('pw').value);if(!img)return toast('Pilih foto dulu');if(!(w>20))return toast('Berat tidak valid');S.w=w;S.photos.push({d:today(),w,img});save();toast('Foto progres tersimpan');render()};
+ if(g('reset'))g('reset').onclick=()=>{if(confirm('Hapus semua data? Tidak bisa dibatalkan.')){try{localStorage.removeItem('sysq')}catch(e){}S=null;render()}};
+}
+
+/* ---- auto counter (camera brightness) ---- */
+let CT=null;
+async function startCounter(){
+ const ov=$('#ov');let count=0,near=false,base=0,t0=Date.now(),stream=null,wl=null,sens=.5,lastLevel=0;
+ ov.innerHTML=`<div class="tag">[ PUSH UP COUNTER ]</div><div id="cnt">0</div><div id="stat" class="far">KALIBRASI...</div><div class="small" id="info" style="margin-bottom:12px"></div>
+ <div style="width:100%;max-width:340px"><label>SENSITIVITAS <span id="sv"></span></label><input type="range" id="sl" min="25" max="75" value="50">
+ <div class="row" style="margin-top:14px"><button id="cal">Kalibrasi ulang</button><button id="tap">+1 Manual</button></div>
+ <button class="big" id="fin" style="margin-top:12px">Selesai & Simpan</button><button id="cancel" class="danger big" style="margin-top:10px">Batal</button></div><video id="vid" playsinline muted></video>`;
+ ov.classList.add('show');beep(500,.05);
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.innerHTML=v};
+ const tickUI=()=>set('cnt',count);
+ const sl=document.getElementById('sl');sl.oninput=()=>{sens=sl.value/100;set('sv',sl.value+'%')};set('sv','50%');
+ try{if(!navigator.mediaDevices)throw 0;stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:160,height:120},audio:false});
+  const v=document.getElementById('vid');v.srcObject=stream;await v.play();
+  try{wl=await navigator.wakeLock.request('screen')}catch(e){}
+  const c=document.createElement('canvas');c.width=32;c.height=24;const x=c.getContext('2d',{willReadFrequently:true});let hist=[],calEnd=Date.now()+2500,mx=0;
+  document.getElementById('cal').onclick=()=>{calEnd=Date.now()+2500;mx=0;near=false;set('stat','KALIBRASI...');base=0};
+  CT=setInterval(()=>{x.drawImage(v,0,0,32,24);const d=x.getImageData(0,0,32,24).data;let s=0;for(let i=0;i<d.length;i+=4)s+=d[i]*.3+d[i+1]*.59+d[i+2]*.11;const b=s/(d.length/4);
+   set('info',`Cahaya: ${b.toFixed(0)} · Dasar: ${base.toFixed(0)}`);
+   if(Date.now()<calEnd){mx=Math.max(mx,b);base=mx;return}
+   if(base<8){set('stat','TERLALU GELAP');return}
+   const lo=base*(.2+sens*.5),hi=base*(.3+sens*.55);
+   if(!near&&b<lo){near=true;set('stat','DEKAT');document.getElementById('stat').className='near'}
+   else if(near&&b>hi){near=false;count++;tickUI();beep(700,.08);if(navigator.vibrate)navigator.vibrate(30);set('stat','JAUH');document.getElementById('stat').className='far'}
+   else if(!near&&document.getElementById('stat').textContent==='KALIBRASI...'){set('stat','SIAP - MULAI PUSH UP')}
+  },60);set('stat','KALIBRASI...');setTimeout(()=>{if(document.getElementById('stat')&&near===false)set('stat','SIAP - MULAI PUSH UP')},2600);
+ }catch(e){set('stat','KAMERA TIDAK TERSEDIA');set('info','Izinkan kamera, atau pakai tombol +1 Manual / ketuk angka.')}
+ document.getElementById('tap').onclick=()=>{count++;tickUI();beep(700,.08)};
+ document.getElementById('cnt').onclick=()=>{count++;tickUI();beep(700,.08)};
+ const stop=()=>{clearInterval(CT);if(stream)stream.getTracks().forEach(t=>t.stop());try{wl&&wl.release()}catch(e){}ov.classList.remove('show');ov.innerHTML=''};
+ document.getElementById('cancel').onclick=stop;
+ document.getElementById('fin').onclick=()=>{const n=count;stop();if(n>0)addReps('pushup',n);else toast('Belum ada push up terhitung')};
+}
+render();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
