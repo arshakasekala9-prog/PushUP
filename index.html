@@ -43,7 +43,7 @@ button.danger{border-color:var(--bad);color:var(--bad)}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
 .stats b{display:block;font-size:17px;color:#fff}.stats span{font-size:10px;color:var(--dim);letter-spacing:1px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#050a18;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
-nav button{flex:1;border:0;border-right:1px solid #12306e;padding:15px 2px;font-size:11px;color:var(--dim)}
+nav button{flex:1;border:0;border-right:1px solid #12306e;padding:15px 0;font-size:10px;color:var(--dim)}
 nav button.on{color:#fff;background:rgba(74,163,255,.18);box-shadow:inset 0 2px 0 var(--glow)}
 .mv{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #12306e}
 .mv:last-child{border:0}.mv .n{font-weight:700}.mv input{width:80px;text-align:center;padding:9px}
@@ -86,6 +86,7 @@ const $=s=>document.querySelector(s);
 const today=()=>new Date().toLocaleDateString('en-CA');
 let S=null,tab='status',draft={diff:'easy',photo:null};
 try{S=JSON.parse(localStorage.getItem('sysq')||'null')}catch(e){}
+if(S){S.hidden=S.hidden||[];S.custom=S.custom||[];S.mvLv=S.mvLv||{}}
 function save(){try{localStorage.setItem('sysq',JSON.stringify(S))}catch(e){toast('Penyimpanan penuh, foto mungkin tidak tersimpan')}}
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -95,11 +96,14 @@ const levelOf=x=>Math.floor(Math.sqrt(x/50))+1;
 const levelStart=l=>50*(l-1)*(l-1);
 function rankOf(x,d){const st=STEPS[d];let c=0,r=0;for(let i=0;i<st.length;i++){c+=st[i];if(x>=c)r=i+1}return r}
 function rankBounds(x,d){const st=STEPS[d];let c=0;for(let i=0;i<st.length;i++){if(x<c+st[i])return[c,c+st[i]];c+=st[i]}return[c,c]}
-function unlocked(m,st=S){const di=ORD.indexOf(st.diff);if(di<ORD.indexOf(m.min))return false;
+function allMoves(){return MOVES.filter(m=>!S.hidden.includes(m.id)).concat(S.custom)}
+function lvOf(m){return (S.mvLv&&S.mvLv[m.id])||m.lv||0}
+function lockMsg(m){if(ORD.indexOf(S.diff)<ORD.indexOf(m.min))return '[Terkunci] Khusus '+DIFF[m.min].n+' ke atas';if(m.rankOnlyEasy&&S.diff==='easy'&&rankOf(S.exp,S.diff)<m.rank)return '[Terkunci] Capai Rank '+RANKS[m.rank];return '[Terkunci] Capai Level '+lvOf(m)}
+function unlocked(m,st=S){const di=ORD.indexOf(st.diff);if(di<ORD.indexOf(m.min))return false;if(lvOf(m)>levelOf(st.exp))return false;
  if(m.rankOnlyEasy&&st.diff==='easy')return rankOf(st.exp,st.diff)>=m.rank;return true}
 function dayRec(){const k=today();return S.days[k]||(S.days[k]={pushup:0,exp:0})}
 function addReps(id,n){
- if(!n||n<=0)return;const m=MOVES.find(x=>x.id===id),before={l:levelOf(S.exp),r:rankOf(S.exp,S.diff),open:MOVES.filter(x=>unlocked(x)).map(x=>x.id)};
+ if(!n||n<=0)return;const m=allMoves().find(x=>x.id===id),before={l:levelOf(S.exp),r:rankOf(S.exp,S.diff),open:allMoves().filter(x=>unlocked(x)).map(x=>x.id)};
  const day=dayRec();let gain=0;
  if(id==='pushup'){const t=DIFF[S.diff].t;for(let i=1;i<=n;i++)gain+=(day.pushup+i>t)?1.5:1;day.pushup+=n;if(day.pushup>S.record)S.record=day.pushup}
  else gain=n*m.x;
@@ -107,7 +111,7 @@ function addReps(id,n){
  save();toast(`+${gain} EXP  (${m.n} x ${n})`);
  const after={l:levelOf(S.exp),r:rankOf(S.exp,S.diff)};const q=[];
  if(after.r>before.r)q.push(['RANK UP!',`Rank ${RANKS[before.r]} → ${RANKS[after.r]}`,'']);
- MOVES.filter(x=>unlocked(x)&&!before.open.includes(x.id)).forEach(x=>q.push(['GERAKAN BARU',x.n,'Gerakan baru terbuka!']));
+ allMoves().filter(x=>unlocked(x)&&!before.open.includes(x.id)).forEach(x=>q.push(['GERAKAN BARU',x.n,'Gerakan baru terbuka!']));
  if(after.l>before.l){q.push(['LEVEL UP!',`Level ${before.l} → ${after.l}`,'']);
   S.rewards.filter(r=>r.lv>before.l&&r.lv<=after.l).forEach(r=>q.push(['HADIAH TERBUKA!',`Level ${r.lv}`,esc(r.text)]))}
  showQ(q);render();
@@ -139,7 +143,7 @@ function register(a){
  $('#rp').onchange=async e=>{draft.photo=await readPhoto(e.target.files[0]);const p=$('#pv');if(draft.photo){p.src=draft.photo;p.style.display='block'}};
  $('#go').onclick=()=>{keep();const h=+draft.h,w=+draft.w;
   if(!draft.name.trim())return toast('Isi nama dulu');if(!(h>50&&h<260))return toast('Tinggi tidak valid');if(!(w>20&&w<400))return toast('Berat tidak valid');if(!draft.photo)return toast('Foto full body wajib diisi');
-  S={name:draft.name.trim(),h,w,diff:draft.diff,exp:0,record:0,days:{},rewards:[],photos:[{d:today(),w,img:draft.photo}]};save();draft={diff:'easy',photo:null};tab='status';render()}}
+  S={name:draft.name.trim(),h,w,diff:draft.diff,exp:0,record:0,days:{},rewards:[],hidden:[],custom:[],mvLv:{},photos:[{d:today(),w,img:draft.photo}]};save();draft={diff:'easy',photo:null};tab='status';render()}}
 
 function main(a){
  const r=rankOf(S.exp,S.diff),lv=levelOf(S.exp),dr=DIFF[S.diff];
@@ -148,8 +152,9 @@ function main(a){
  if(tab==='train')body=trainView();
  if(tab==='reward')body=rewardView(lv);
  if(tab==='prog')body=progView();
+ if(tab==='set')body=settingView();
  a.innerHTML=`<div class="title">SYSTEM</div>${body}
- <nav>${[['status','Status'],['train','Latihan'],['reward','Hadiah'],['prog','Progres']].map(([k,n])=>`<button data-t="${k}" class="${tab===k?'on':''}">${n}</button>`).join('')}</nav>`;
+ <nav>${[['status','Status'],['train','Latihan'],['reward','Hadiah'],['prog','Progres'],['set','Setting']].map(([k,n])=>`<button data-t="${k}" class="${tab===k?'on':''}">${n}</button>`).join('')}</nav>`;
  a.querySelectorAll('nav [data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();scrollTo(0,0)});
  bind();
 }
@@ -161,12 +166,24 @@ function statusView(r,lv){
  <div class="small" style="margin-top:10px">${r>=5?'RANK S TERCAPAI':`RANK ${RANKS[r]} → ${RANKS[r+1]} (${Math.floor(S.exp-a0)}/${a1-a0})`}</div><div class="bar"><i style="width:${rp}%"></i></div></div>
  <div class="panel"><h3>Daily Quest</h3><div style="font-size:16px">Push Up: ${day.pushup}/${t}</div><div class="bar q"><i style="width:${dp}%"></i></div>
  <div class="small">${day.pushup>=t?'Quest selesai! Push up berikutnya dapat bonus EXP 1,5x.':'Di atas target dapat bonus EXP 1,5x. Di bawah target tetap dapat EXP normal.'}</div></div>
- <div class="panel"><h3>Atribut</h3><div class="stats"><div><b>${S.h}</b><span>TINGGI CM</span></div><div><b>${S.w}</b><span>BERAT KG</span></div><div><b>${bmi}</b><span>BMI</span></div><div><b>${S.record}</b><span>REKOR/HARI</span></div><div><b>${day.exp}</b><span>EXP HARI INI</span></div><div><b>${Object.keys(S.days).length}</b><span>HARI AKTIF</span></div></div></div>`}
+ ${bmiPanel()}<div class="panel"><h3>Atribut</h3><div class="stats"><div><b>${S.h}</b><span>TINGGI CM</span></div><div><b>${S.w}</b><span>BERAT KG</span></div><div><b>${bmi}</b><span>BMI</span></div><div><b>${S.record}</b><span>REKOR/HARI</span></div><div><b>${day.exp}</b><span>EXP HARI INI</span></div><div><b>${Object.keys(S.days).length}</b><span>HARI AKTIF</span></div></div></div>`}
 function trainView(){
- const r=rankOf(S.exp,S.diff);
  return `<div class="panel"><h3>Push Up Otomatis</h3><div class="small" style="margin-bottom:10px">Taruh HP di lantai, layar menghadap atas, tepat di bawah dada. Kamera depan membaca bayangan/gelap saat dada turun, tanpa perlu menyentuh layar.</div><button class="big" id="auto">Mulai Hitung Otomatis</button></div>
- <div class="panel"><h3>Input Manual</h3>${MOVES.map(m=>{const ok=unlocked(m);return `<div class="mv ${ok?'':'lock'}"><div><div class="n">${m.n}</div><div class="small">${ok?`${m.x} EXP / ${m.u==='menit'?'menit':'rep'}`:m.rankOnlyEasy&&ORD.indexOf(S.diff)>=0&&S.diff==='easy'?`[Terkunci] Capai Rank ${RANKS[m.rank]}`:`[Terkunci] Khusus ${DIFF[m.min].n} ke atas`}</div></div>
+ <div class="panel"><h3>Input Manual</h3>${allMoves().map(m=>{const ok=unlocked(m);return `<div class="mv ${ok?'':'lock'}"><div><div class="n">${esc(m.n)}</div><div class="small">${ok?`${m.x} EXP / ${m.u==='menit'?'menit':'rep'}`:lockMsg(m)}</div></div>
  ${ok?`<div class="row" style="flex:none"><input type="number" inputmode="numeric" min="1" id="in-${m.id}" placeholder="${m.u==='menit'?'menit':'rep'}"><button data-add="${m.id}">+</button></div>`:'<span>🔒</span>'}</div>`}).join('')}</div>`}
+function bmiPanel(){
+ const b=S.w/((S.h/100)**2),c=b<18.5?['Kurus','#ffc857']:b<25?['Normal','#3de0a0']:b<30?['Overweight','#ffc857']:['Obesitas','#ff5c7a'];
+ const pos=Math.max(2,Math.min(98,(b-15)/25*100)),lo=(18.5*(S.h/100)**2).toFixed(1),hi=(24.9*(S.h/100)**2).toFixed(1);
+ return `<div class="panel"><h3>Body Mass Index</h3><div class="head"><div class="rank" style="border-color:${c[1]};color:${c[1]};text-shadow:0 0 14px ${c[1]};font-size:30px">${b.toFixed(1)}</div><div style="flex:1"><div style="font-size:20px;font-weight:700;color:${c[1]}">${c[0]}</div><div class="small">${S.h} cm · ${S.w} kg</div><div class="small">Berat ideal: ${lo} - ${hi} kg</div></div></div>
+ <div style="position:relative;height:12px;margin:16px 0 4px;background:linear-gradient(90deg,#ffc857 0 14%,#3de0a0 14% 38%,#ffc857 38% 62%,#ff5c7a 62%);opacity:.9"><i style="position:absolute;top:-5px;left:${pos}%;width:3px;height:22px;background:#fff;box-shadow:0 0 8px #fff"></i></div>
+ <div class="small" style="display:flex;justify-content:space-between"><span>15</span><span>18.5</span><span>25</span><span>30</span><span>40</span></div>
+ <div class="small" style="margin-top:8px">BMI hanya perkiraan kasar dan tidak membedakan otot dari lemak. Update berat di tab Progres supaya BMI ikut berubah.</div></div>`}
+function settingView(){
+ const mv=allMoves(),hid=MOVES.filter(m=>S.hidden.includes(m.id));
+ return `<div class="panel"><h3>Kelola Gerakan</h3><div class="small" style="margin-bottom:6px">Atur level minimal untuk membuka tiap gerakan. Push Up tidak bisa dihapus karena dipakai penghitung otomatis.</div>${mv.map(m=>`<div class="mv"><div><div class="n">${esc(m.n)}</div><div class="small">${m.x} EXP / ${m.u}</div></div><div class="row" style="flex:none;gap:6px"><div style="text-align:center"><div class="small">Buka di Lv</div><input type="number" min="0" data-lv="${m.id}" value="${lvOf(m)}"></div>${m.id==='pushup'?'':`<button class="danger" data-rm="${m.id}">Hapus</button>`}</div></div>`).join('')}</div>
+ <div class="panel"><h3>Tambah Gerakan</h3><label>NAMA</label><input id="mn" placeholder="mis. Sit Up"><div class="row"><div><label>SATUAN</label><select id="mu"><option>repetisi</option><option>menit</option></select></div><div><label>EXP/SATUAN</label><input id="mx" type="number" step="0.1" inputmode="decimal" value="1"></div><div><label>BUKA DI LV</label><input id="ml" type="number" inputmode="numeric" value="1"></div></div><button class="big" id="madd" style="margin-top:10px">Tambah Gerakan</button></div>
+ ${hid.length?`<div class="panel"><h3>Gerakan Dihapus</h3>${hid.map(m=>`<div class="mv"><span>${m.n}</span><button data-rs="${m.id}">Pulihkan</button></div>`).join('')}</div>`:''}
+ <div class="panel"><h3>Data</h3><button class="danger big" id="reset">Reset Semua Data</button></div>`}
 function rewardView(lv){
  const rs=[...S.rewards].sort((a,b)=>a.lv-b.lv);
  return `<div class="panel"><h3>Tambah Hadiah</h3><div class="row"><input id="rl" type="number" inputmode="numeric" placeholder="Level" style="flex:.5"><input id="rt" placeholder="Hadiah, mis. makan es krim"></div><button class="big" id="radd" style="margin-top:10px">Simpan Hadiah</button></div>
@@ -176,8 +193,7 @@ function progView(){
  return `<div class="panel"><h3>Perbandingan Foto</h3><div class="photos"><div><img src="${f.img}"><br>AWAL · ${f.d}<br>${f.w} kg</div><div>${S.photos.length>1?`<img src="${l.img}"><br>TERBARU · ${l.d}<br>${l.w} kg`:'<div class="small" style="padding:60px 6px">Tambah foto progres untuk dibandingkan</div>'}</div></div>
  ${S.photos.length>1?`<div class="small" style="margin-top:8px;text-align:center">Perubahan berat: ${(l.w-f.w>0?'+':'')}${(l.w-f.w).toFixed(1)} kg</div>`:''}</div>
  <div class="panel"><h3>Foto Progres Baru</h3><label>BERAT SEKARANG (KG)</label><input id="pw" type="number" inputmode="decimal" value="${S.w}"><label>FOTO FULL BODY</label><input id="pf" type="file" accept="image/*"><button class="big" id="padd" style="margin-top:10px">Simpan Foto</button></div>
- <div class="panel"><h3>7 Hari Terakhir</h3>${keys.length?keys.map(k=>`<div class="mv"><span>${k}</span><span>${S.days[k].pushup} push up · ${S.days[k].exp} EXP</span></div>`).join(''):'<div class="small">Belum ada latihan.</div>'}</div>
- <div class="panel"><h3>Pengaturan</h3><button class="danger big" id="reset">Reset Semua Data</button></div>`}
+ <div class="panel"><h3>7 Hari Terakhir</h3>${keys.length?keys.map(k=>`<div class="mv"><span>${k}</span><span>${S.days[k].pushup} push up · ${S.days[k].exp} EXP</span></div>`).join(''):'<div class="small">Belum ada latihan.</div>'}</div>`}
 
 function bind(){
  const g=id=>document.getElementById(id);
@@ -186,6 +202,10 @@ function bind(){
  if(g('radd'))g('radd').onclick=()=>{const lv=parseInt(g('rl').value),t=g('rt').value.trim();if(!(lv>0)||!t)return toast('Isi level dan hadiah');S.rewards.push({id:Date.now(),lv,text:t});save();render()};
  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{S.rewards=S.rewards.filter(r=>r.id!=b.dataset.del);save();render()});
  if(g('padd'))g('padd').onclick=async()=>{const img=await readPhoto(g('pf').files[0]),w=parseFloat(g('pw').value);if(!img)return toast('Pilih foto dulu');if(!(w>20))return toast('Berat tidak valid');S.w=w;S.photos.push({d:today(),w,img});save();toast('Foto progres tersimpan');render()};
+ document.querySelectorAll('[data-lv]').forEach(i=>i.onchange=()=>{S.mvLv[i.dataset.lv]=Math.max(0,parseInt(i.value)||0);save();toast('Level buka diubah')});
+ document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const id=b.dataset.rm;if(!confirm('Hapus gerakan ini? EXP yang sudah didapat tetap aman.'))return;if(S.custom.some(m=>m.id===id))S.custom=S.custom.filter(m=>m.id!==id);else S.hidden.push(id);save();render()});
+ document.querySelectorAll('[data-rs]').forEach(b=>b.onclick=()=>{S.hidden=S.hidden.filter(x=>x!==b.dataset.rs);save();render()});
+ if(g('madd'))g('madd').onclick=()=>{const n=g('mn').value.trim(),x=parseFloat(g('mx').value),l=parseInt(g('ml').value)||0;if(!n||!(x>0))return toast('Isi nama dan EXP dengan benar');S.custom.push({id:'c'+Date.now(),n,u:g('mu').value,x,min:'easy',rank:0,lv:Math.max(0,l)});save();toast('Gerakan ditambahkan');render()};
  if(g('reset'))g('reset').onclick=()=>{if(confirm('Hapus semua data? Tidak bisa dibatalkan.')){try{localStorage.removeItem('sysq')}catch(e){}S=null;render()}};
 }
 
