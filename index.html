@@ -80,6 +80,21 @@ label.chk small{color:var(--dim);font-size:11px}
 .sets{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .sst{width:64px}.sst small{display:block;font-size:9px;color:var(--dim);margin-bottom:2px}
 .sst input{padding:9px 4px;text-align:center;font-size:15px}
+textarea{width:100%;background:#050b1c;border:1px solid var(--line);color:#fff;padding:11px;font:inherit;font-size:14px;outline:none;min-height:74px;resize:vertical}
+textarea:focus{box-shadow:0 0 8px var(--glow)}
+
+.pop{background:rgba(3,6,14,.84)}
+.pc{width:100%;max-width:390px;background:#0c1322;border:1px solid #1f2d4d;border-radius:16px;padding:30px 24px 22px;text-align:center;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 24px rgba(47,109,240,.18);animation:pin .28s ease-out}
+.pic{color:#5b9dff;margin-bottom:10px;display:flex;justify-content:center}
+.pt{font-size:26px;font-weight:800;color:#5b9dff;letter-spacing:.5px;margin-bottom:14px}
+.ps{font-size:17px;font-weight:800;color:#fff;text-transform:uppercase;margin-bottom:14px}
+.pm{font-size:14px;color:#fff;margin-bottom:10px}
+.pb{font-size:14px;color:#c9d4ec;line-height:1.5;margin:0 4px 6px}
+.px{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #26334f;margin-top:18px;padding-top:14px;font-size:13.5px;color:#c9d4ec}
+.px b{color:#5b9dff;font-size:14.5px}
+.pc #pok{width:100%;margin-top:18px;background:#2f6df0;border:0;border-radius:10px;padding:15px;font:700 14px system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;letter-spacing:.6px;text-transform:uppercase;color:#fff;box-shadow:none}
+.pc #pok:hover,.pc #pok:active{background:#3f7bff;box-shadow:none}
+@keyframes pin{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
 </style>
 </head>
 <body>
@@ -132,7 +147,8 @@ const PLAN={
   main:[E('tm','Treadmill','Kardio','20-30','-',8,'Mulai jalan santai, naikkan kecepatan bertahap sesuai kemampuan.',{u:'menit'})],
   cool:[['Hamstring Stretch','Tahan 15-30 detik per kaki'],['Quad Stretch','Tahan 15-30 detik per kaki'],['Calf Stretch','Tahan 15-30 detik per kaki'],['Hip Flexor Stretch','Tahan 15-30 detik per kaki'],['Lower Back Stretch','Tahan 15-30 detik'],['Shoulder Stretch','Tahan 15-30 detik per sisi']]}
 };
-const VERSION='v5 - Program PPL';
+const VERSION='v7 - Pop-up baru';
+const DEFMSG={lv:'Progresmu terus meningkat!\nSetiap latihan membawamu selangkah lebih dekat menuju versi terbaik dirimu.',rk:'Pangkatmu naik, {nama}!\nKonsistensimu mulai terlihat hasilnya. Terus naikkan rankmu!'};
 const RANKS=['E','D','C','B','A','S'];
 const STEPS={easy:[600,900,1250,1600,2350],medium:[1300,2100,3000,5000,8400],hard:[2500,3800,6700,10500,15100],extreme:[5000,8400,12600,20000,33600]};
 const DIFF={easy:{n:'Easy',t:50,d:'Target 50/hari'},medium:{n:'Medium',t:100,d:'Target 100/hari'},hard:{n:'Hard',t:200,d:'Target 200/hari'},extreme:{n:'Extreme',t:300,d:'Target 300/hari'}};
@@ -147,7 +163,7 @@ const $=s=>document.querySelector(s);
 const today=()=>new Date().toLocaleDateString('en-CA');
 let S=null,tab='status',draft={diff:'easy',photo:null};
 try{S=JSON.parse(localStorage.getItem('sysq')||'null')}catch(e){}
-if(S){S.sched=S.sched||DEFSCHED.slice();S.sess=S.sess||{};if(!S.quests)S.quests=[{id:'q0',mv:'pushup',t:DIFF[S.diff].t}];S.qseen=S.qseen||['pushup'];S.hidden=S.hidden||[];S.custom=S.custom||[];S.mvLv=S.mvLv||{}}
+if(S){S.seen=S.seen||{lv:1,rk:0};S.sched=S.sched||DEFSCHED.slice();S.sess=S.sess||{};if(!S.quests)S.quests=[{id:'q0',mv:'pushup',t:DIFF[S.diff].t}];S.qseen=S.qseen||['pushup'];S.hidden=S.hidden||[];S.custom=S.custom||[];S.mvLv=S.mvLv||{}}
 function save(){try{localStorage.setItem('sysq',JSON.stringify(S))}catch(e){toast('Penyimpanan penuh, foto mungkin tidak tersimpan')}}
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -166,16 +182,36 @@ function dayRec(){const k=today();const d=S.days[k]||(S.days[k]={pushup:0,exp:0}
 function cnt(day,id){return id==='pushup'?day.pushup:((day.m&&day.m[id])||0)}
 function syncQuests(){let ch=false;allMoves().forEach(m=>{if(!S.qseen.includes(m.id)&&unlocked(m)){S.qseen.push(m.id);if(!S.quests.some(q=>q.mv===m.id))S.quests.push({id:'q'+m.id,mv:m.id,t:m.u==='menit'?20:30});ch=true}});if(ch)save()}
 function snap(){return{l:levelOf(S.exp),r:rankOf(S.exp,S.diff),open:allMoves().filter(x=>unlocked(x)).map(x=>x.id)}}
+function fmtMsg(t,o){return esc(t).replace(/\{(\w+)\}/g,(x,k)=>o[k]!=null?o[k]:x).replace(/\n/g,'<br>')}
+function msgOf(){return Object.assign({},DEFMSG,S.msgs||{})}
+function msgParts(t,o){const L=String(t||'').split('\n');return [fmtMsg(L[0],o),fmtMsg(L.slice(1).join('\n').trim(),o)]}
+function lvItem(f,t,o,xp,txt){const m=msgParts(txt,o);return ['LEVEL UP!',`Level ${f} → Level ${t}`,m[0],xp,'level',m[1]]}
+function rkItem(f,t,o,xp,txt){const m=msgParts(txt,o);return ['RANK UP!',`Rank ${RANKS[f]} → Rank ${RANKS[t]}`,m[0],xp,'rank',m[1]]}
+function milestoneQ(){
+ if(!S.seen)S.seen={lv:1,rk:0};
+ const lv=levelOf(S.exp),rk=rankOf(S.exp,S.diff),q=[],M=msgOf(),o={nama:S.name,lv:lv,rank:RANKS[rk],exp:Math.floor(S.exp)};
+ if(rk>S.seen.rk)q.push(rkItem(S.seen.rk,rk,o,null,M.rk));
+ if(lv>S.seen.lv){q.push(lvItem(S.seen.lv,lv,o,null,M.lv));
+  S.rewards.filter(r=>r.lv>S.seen.lv&&r.lv<=lv).sort((a,b)=>a.lv-b.lv).forEach(r=>q.push(['HADIAH TERBUKA!',`Level ${r.lv}`,esc(r.text),null,'reward','Kamu sudah layak mendapatkannya. Nikmati hadiahmu!']))}
+ if(lv!==S.seen.lv||rk!==S.seen.rk){S.seen={lv:Math.max(lv,S.seen.lv),rk:Math.max(rk,S.seen.rk)};save()}
+ return q}
 function applyGain(gain,msg,before,extra){
  const day=dayRec();gain=Math.round(gain*10)/10;S.exp=Math.round((S.exp+gain)*10)/10;day.exp=Math.round((day.exp+gain)*10)/10;
  save();toast(`+${gain} EXP  (${msg})`);
- const after={l:levelOf(S.exp),r:rankOf(S.exp,S.diff)};const q=(extra||[]).slice();
- if(after.r>before.r)q.push(['RANK UP!',`Rank ${RANKS[before.r]} → ${RANKS[after.r]}`,'']);
- allMoves().filter(x=>unlocked(x)&&!before.open.includes(x.id)).forEach(x=>q.push(['GERAKAN BARU',x.n,'Gerakan baru terbuka!']));
- if(after.l>before.l){q.push(['LEVEL UP!',`Level ${before.l} → ${after.l}`,'']);
-  S.rewards.filter(r=>r.lv>before.l&&r.lv<=after.l).forEach(r=>q.push(['HADIAH TERBUKA!',`Level ${r.lv}`,esc(r.text)]))}
+ const q=(extra||[]).slice();
+ allMoves().filter(x=>unlocked(x)&&!before.open.includes(x.id)).forEach(x=>q.push(['GERAKAN BARU',x.n,'Gerakan baru terbuka!',null,'move','Kamu bisa langsung mencobanya di tab Latihan.']));
+ milestoneQ().forEach(x=>q.push(x));
+ q.forEach(x=>{if(/LEVEL|RANK|CLEAR|SESI/.test(x[0])&&x[3]==null)x[3]=gain});
  showQ(q);render();
 }
+function msgPanel(){const M=msgOf();
+ return `<div class="panel"><h3>Kata-kata Pop-up</h3><div class="small" style="margin-bottom:6px">Tulis pesan yang muncul saat naik level atau rank. Baris pertama jadi kalimat utama, baris berikutnya jadi teks penjelas. Variabel: {nama} {lv} {rank} {exp}</div>
+ <label>PESAN NAIK LEVEL</label><textarea id="mlv">${esc(M.lv)}</textarea>
+ <label>PESAN NAIK RANK</label><textarea id="mrk">${esc(M.rk)}</textarea>
+ <div class="row" style="margin-top:10px"><button id="msave">Simpan</button><button id="mdef">Kembalikan bawaan</button></div>
+ <div class="row" style="margin-top:8px"><button id="mtl">Tes pop-up level</button><button id="mtr">Tes pop-up rank</button></div></div>`}
+function exportData(){try{const b=new Blob([JSON.stringify(S)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='system-pushup-cadangan-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast('Cadangan diunduh')}catch(e){toast('Gagal membuat cadangan')}}
+function importData(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||typeof d.exp!=='number'||!d.name||!d.diff)throw 0;if(!confirm('Pulihkan data dari cadangan? Data saat ini akan diganti.'))return;localStorage.setItem('sysq',JSON.stringify(d));location.reload()}catch(e){toast('File cadangan tidak valid')}};r.readAsText(f)}
 function addReps(id,n){
  if(!n||n<=0)return;const m=allMoves().find(x=>x.id===id),before={l:levelOf(S.exp),r:rankOf(S.exp,S.diff),open:allMoves().filter(x=>unlocked(x)).map(x=>x.id)};
  const day=dayRec();let gain=0;
@@ -183,9 +219,11 @@ function addReps(id,n){
  if(id==='pushup'){day.pushup+=n;if(day.pushup>S.record)S.record=day.pushup}else day.m[id]=(day.m[id]||0)+n;
  applyGain(gain,`${m.n} x ${n}`,before);
 }
-function showQ(q){if(!q.length)return;const[h,a,b]=q.shift();const p=$('#pop');
- p.innerHTML=`<div class="panel"><div class="tag">[ SYSTEM ]</div><h2>${h}</h2><div style="font-size:18px;margin:8px 0">${a}</div><div class="small" style="margin-bottom:14px">${b}</div><button class="big" id="pok">OK</button></div>`;
- p.classList.add('show');beep(880,.15);if(navigator.vibrate)navigator.vibrate([80,40,80]);
+const ICONS={level:'<polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/>',rank:'<circle cx="12" cy="9" r="6"/><path d="M8.5 14.5 7 22l5-3 5 3-1.5-7.5"/>',reward:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9M7.5 8a2.5 2.5 0 1 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 1 1 0 5"/>',move:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',clear:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>'};
+function showQ(q){if(!q.length)return;const[h,a,t,xp,k0,body]=q.shift(),k=k0||(/LEVEL/.test(h)?'level':/RANK/.test(h)?'rank':/HADIAH/.test(h)?'reward':/GERAKAN/.test(h)?'move':'clear'),p=$('#pop');
+ p.innerHTML=`<div class="pc"><div class="pic"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]||ICONS.clear}</svg></div><div class="pt">${h}</div><div class="ps">${a}</div>${t?`<div class="pm">${t}</div>`:''}${body?`<div class="pb">${body}</div>`:''}${xp!=null?`<div class="px"><span>XP diperoleh</span><b>+${(Math.round(xp*10)/10).toLocaleString('id')} XP</b></div>`:''}<button id="pok">Lanjutkan</button></div>`;
+ p.classList.add('show');
+ if(/LEVEL|RANK|CLEAR/.test(h)){beep(660,.1);setTimeout(()=>beep(880,.1),130);setTimeout(()=>beep(1175,.25),260);if(navigator.vibrate)navigator.vibrate([120,60,120,60,240])}else{beep(880,.15);if(navigator.vibrate)navigator.vibrate([80,40,80])}
  $('#pok').onclick=()=>{p.classList.remove('show');showQ(q)}}
 
 /* ---- audio ---- */
@@ -195,7 +233,7 @@ let AC;function beep(f=660,d=.08){try{AC=AC||new(window.AudioContext||window.web
 function readPhoto(file){return new Promise(res=>{if(!file)return res(null);const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,520/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};im.onerror=()=>res(null);im.src=r.result};r.readAsDataURL(file)})}
 
 /* ---- views ---- */
-function render(){const a=$('#app');if(S)syncQuests();S?main(a):register(a)}
+function render(){const a=$('#app');if(S)syncQuests();S?main(a):register(a);if(S){const q=milestoneQ();if(q.length)showQ(q)}}
 function register(a){
  a.innerHTML=`<div class="title">PLAYER REGISTRATION</div>
  <div class="panel"><h3>Data Pemain</h3>
@@ -210,7 +248,7 @@ function register(a){
  $('#rp').onchange=async e=>{draft.photo=await readPhoto(e.target.files[0]);const p=$('#pv');if(draft.photo){p.src=draft.photo;p.style.display='block'}};
  $('#go').onclick=()=>{keep();const h=+draft.h,w=+draft.w;
   if(!draft.name.trim())return toast('Isi nama dulu');if(!(h>50&&h<260))return toast('Tinggi tidak valid');if(!(w>20&&w<400))return toast('Berat tidak valid');if(!draft.photo)return toast('Foto full body wajib diisi');
-  S={name:draft.name.trim(),h,w,diff:draft.diff,exp:0,record:0,days:{},quests:[{id:'q0',mv:'pushup',t:DIFF[draft.diff].t}],qseen:['pushup'],rewards:[],hidden:[],custom:[],mvLv:{},sched:DEFSCHED.slice(),sess:{},photos:[{d:today(),w,img:draft.photo}]};save();draft={diff:'easy',photo:null};tab='status';render()}}
+  S={name:draft.name.trim(),h,w,diff:draft.diff,exp:0,record:0,days:{},quests:[{id:'q0',mv:'pushup',t:DIFF[draft.diff].t}],qseen:['pushup'],rewards:[],hidden:[],custom:[],mvLv:{},sched:DEFSCHED.slice(),sess:{},seen:{lv:1,rk:0},photos:[{d:today(),w,img:draft.photo}]};save();draft={diff:'easy',photo:null};tab='status';render()}}
 
 function main(a){
  const r=rankOf(S.exp,S.diff),lv=levelOf(S.exp),dr=DIFF[S.diff];
@@ -281,7 +319,7 @@ function finishSess(){
  P.main.forEach(ex=>{const tot=(ss.sets[ex.id]||[]).reduce((x,y)=>x+(+y||0),0);if(!(tot>0))return;
   if(ex.id==='pushup'){day.pushup+=tot;if(day.pushup>S.record)S.record=day.pushup}else if(ex.mv)day.m[ex.mv]=(day.m[ex.mv]||0)+tot});
  const total=Math.round((gain+bonus)*10)/10;ss.done=true;ss.gain=total;ss.bonus=bonus;
- applyGain(total,`${P.n} selesai`,before,[[(full&&wOk&&cOk)?'DUNGEON CLEAR!':'SESI SELESAI',P.n,`+${total} EXP (bonus ${bonus})`]]);
+ applyGain(total,`${P.n} selesai`,before,[[(full&&wOk&&cOk)?'DUNGEON CLEAR!':'SESI SELESAI',P.n,`Kerja bagus, ${esc(S.name)}!`,total,'clear',`Bonus sesi: +${bonus} EXP`]]);
 }
 function planView(){
  const ti=(new Date().getDay()+6)%7,t=S.sched[ti],ss=getSess();
@@ -310,9 +348,10 @@ function bmiPanel(){
  <div class="small" style="margin-top:8px">BMI hanya perkiraan kasar dan tidak membedakan otot dari lemak. Update berat di tab Progres supaya BMI ikut berubah.</div></div>`}
 function settingView(){
  const mv=allMoves(),hid=MOVES.filter(m=>S.hidden.includes(m.id));
- return questSet()+`<div class="panel"><h3>Kelola Gerakan</h3><div class="small" style="margin-bottom:6px">Atur level minimal untuk membuka tiap gerakan. Push Up tidak bisa dihapus karena dipakai penghitung otomatis.</div>${mv.map(m=>`<div class="mv"><div><div class="n">${esc(m.n)}</div><div class="small">${m.x} EXP / ${m.u}</div></div><div class="row" style="flex:none;gap:6px"><div style="text-align:center"><div class="small">Buka di Lv</div><input type="number" min="0" data-lv="${m.id}" value="${lvOf(m)}"></div>${m.id==='pushup'?'':`<button class="danger" data-rm="${m.id}">Hapus</button>`}</div></div>`).join('')}</div>
+ return questSet()+msgPanel()+`<div class="panel"><h3>Kelola Gerakan</h3><div class="small" style="margin-bottom:6px">Atur level minimal untuk membuka tiap gerakan. Push Up tidak bisa dihapus karena dipakai penghitung otomatis.</div>${mv.map(m=>`<div class="mv"><div><div class="n">${esc(m.n)}</div><div class="small">${m.x} EXP / ${m.u}</div></div><div class="row" style="flex:none;gap:6px"><div style="text-align:center"><div class="small">Buka di Lv</div><input type="number" min="0" data-lv="${m.id}" value="${lvOf(m)}"></div>${m.id==='pushup'?'':`<button class="danger" data-rm="${m.id}">Hapus</button>`}</div></div>`).join('')}</div>
  <div class="panel"><h3>Tambah Gerakan</h3><label>NAMA</label><input id="mn" placeholder="mis. Sit Up"><div class="row"><div><label>SATUAN</label><select id="mu"><option>repetisi</option><option>menit</option></select></div><div><label>EXP/SATUAN</label><input id="mx" type="number" step="0.1" inputmode="decimal" value="1"></div><div><label>BUKA DI LV</label><input id="ml" type="number" inputmode="numeric" value="1"></div></div><button class="big" id="madd" style="margin-top:10px">Tambah Gerakan</button></div>
  ${hid.length?`<div class="panel"><h3>Gerakan Dihapus</h3>${hid.map(m=>`<div class="mv"><span>${m.n}</span><button data-rs="${m.id}">Pulihkan</button></div>`).join('')}</div>`:''}
+ <div class="panel"><h3>Cadangan Data</h3><div class="small" style="margin-bottom:8px">Simpan semua progres (level, EXP, foto, jadwal) ke file di HP. Berguna sebelum pasang ulang aplikasi atau ganti HP.</div><button class="big" id="bk">Simpan Cadangan</button><label>PULIHKAN DARI FILE CADANGAN</label><input type="file" id="bkf" accept=".json,application/json"></div>
  <div class="panel"><h3>Data</h3><button class="danger big" id="reset">Reset Semua Data</button><div class="small" style="margin-top:10px;text-align:center">Versi aplikasi: ${VERSION}</div></div>`}
 function rewardView(lv){
  const rs=[...S.rewards].sort((a,b)=>a.lv-b.lv);
@@ -343,6 +382,12 @@ function bind(){
  document.querySelectorAll('[data-sd]').forEach(x=>x.onchange=()=>{S.sched[+x.dataset.sd]=x.value;save();render()});
  document.querySelectorAll('[data-pre]').forEach(b=>b.onclick=()=>{S.sched=PRE[+b.dataset.pre].slice();save();toast('Jadwal diterapkan');render()});
  if(g('sx'))liveExp();
+ if(g('msave'))g('msave').onclick=()=>{S.msgs={lv:g('mlv').value.trim()||DEFMSG.lv,rk:g('mrk').value.trim()||DEFMSG.rk};save();toast('Pesan disimpan')};
+ if(g('mdef'))g('mdef').onclick=()=>{delete S.msgs;save();toast('Pesan dikembalikan');render()};
+ if(g('mtl'))g('mtl').onclick=()=>{const lv=levelOf(S.exp)+1;showQ([lvItem(lv-1,lv,{nama:S.name,lv:lv,rank:RANKS[rankOf(S.exp,S.diff)],exp:Math.floor(S.exp)},125,g('mlv').value||DEFMSG.lv)])};
+ if(g('mtr'))g('mtr').onclick=()=>{const r=rankOf(S.exp,S.diff),n=Math.min(5,r+1);showQ([rkItem(r,n,{nama:S.name,lv:levelOf(S.exp),rank:RANKS[n],exp:Math.floor(S.exp)},125,g('mrk').value||DEFMSG.rk)])};
+ if(g('bk'))g('bk').onclick=exportData;
+ if(g('bkf'))g('bkf').onchange=()=>importData(g('bkf').files[0]);
  document.querySelectorAll('[data-cp]').forEach(b=>b.onclick=()=>{CH.p=b.dataset.cp;render()});
  document.querySelectorAll('[data-cm]').forEach(b=>b.onclick=()=>{CH.m=b.dataset.cm;render()});
  document.querySelectorAll('[data-qt]').forEach(i=>i.onchange=()=>{const q=S.quests.find(x=>x.id===i.dataset.qt);if(q){q.t=Math.max(1,parseInt(i.value)||1);save();toast('Target diubah')}});
