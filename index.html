@@ -43,7 +43,7 @@ button.danger{border-color:var(--bad);color:var(--bad)}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
 .stats b{display:block;font-size:17px;color:#fff}.stats span{font-size:10px;color:var(--dim);letter-spacing:1px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#050a18;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
-nav button{flex:1;border:0;border-right:1px solid #12306e;padding:15px 0;font-size:10px;color:var(--dim)}
+nav button{flex:1;border:0;border-right:1px solid #12306e;padding:15px 0;font-size:9px;color:var(--dim)}
 nav button.on{color:#fff;background:rgba(74,163,255,.18);box-shadow:inset 0 2px 0 var(--glow)}
 .mv{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #12306e}
 .mv:last-child{border:0}.mv .n{font-weight:700}.mv input{width:80px;text-align:center;padding:9px}
@@ -64,6 +64,22 @@ nav button.on{color:#fff;background:rgba(74,163,255,.18);box-shadow:inset 0 2px 
 #toast{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:#0a1a44;border:1px solid var(--glow);padding:10px 16px;z-index:40;display:none;font-size:12px;box-shadow:0 0 14px var(--glow);max-width:90%;text-align:center}
 .pv{width:120px;aspect-ratio:3/4;object-fit:cover;border:1px solid var(--line);display:none;margin-top:8px}
 video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+nav button{letter-spacing:0}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.wd{border:1px solid #1d3a80;padding:7px 0;font-size:10px;position:relative}
+.wd.now{border-color:#fff;box-shadow:0 0 8px var(--glow)}
+.wd span{display:block;color:var(--glow);margin-top:4px;font-size:8px}
+.wd.rs span{color:var(--dim)}
+.wd em{position:absolute;top:1px;right:3px;font-style:normal;color:var(--ok);font-size:9px}
+label.chk{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #12306e;margin:0;color:var(--txt);font-size:13px;letter-spacing:0}
+label.chk input{width:22px;height:22px;flex:none;padding:0;accent-color:#4aa3ff}
+label.chk small{color:var(--dim);font-size:11px}
+.exc{padding:12px 0;border-bottom:1px solid #12306e}.exc:last-child{border:0}
+.exc .n{font-weight:700}
+.sets{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sst{width:64px}.sst small{display:block;font-size:9px;color:var(--dim);margin-bottom:2px}
+.sst input{padding:9px 4px;text-align:center;font-size:15px}
 </style>
 </head>
 <body>
@@ -72,7 +88,51 @@ video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 <div class="pop" id="pop"></div>
 <div id="toast"></div>
 <script>
-const VERSION='v4 - Quest & Grafik';
+const DEFSCHED=['push','pull','legs','rest','push','pull','legs'];
+const PRE=[['push','pull','legs','rest','push','pull','legs'],['push','rest','pull','rest','legs','cardio','rest'],['push','rest','pull','rest','legs','rest','rest']];
+const DN=['Sen','Sel','Rab','Kam','Jum','Sab','Min'],DNF=['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
+const ABBR={push:'PUSH',pull:'PULL',legs:'LEGS',cardio:'CARDIO',rest:'REST'};
+const E=(id,n,m,r,rs,x,c,o)=>Object.assign({id,n,m,s:'3',r,rs,x,c},o||{});
+const PLAN={
+ push:{n:'Push Day',sub:'Dada, bahu, trisep · dumbbell 6 kg',
+  warm:[['Arm Circles','10x ke depan, 10x ke belakang'],['Chest Openers','10-15 repetisi'],['Wrist Roll & Stretch','Tahan 10-15 detik per tangan']],
+  main:[E('bench','Dumbbell Bench Press','Dada','10-12','60-90',1.2,'Berbaring di bangku, dorong dumbbell sejajar dada ke atas hingga lengan hampir lurus.',{s:'3-4',alt:'Tanpa bangku: floor press di lantai.'}),
+   E('shoulder','Dumbbell Shoulder Press','Bahu','10-12','60-90',1.2,'Duduk atau berdiri tegak, dorong dumbbell dari sejajar bahu ke atas hingga lengan hampir lurus.',{s:'3-4',mv:'press'}),
+   E('incline','Dumbbell Incline Press','Dada atas','10-12','60-90',1.2,'Posisi bangku miring, dorong dumbbell dari sejajar dada ke atas.',{s:'3-4',alt:'Tanpa bangku: floor press atau push up dengan kaki ditinggikan.'}),
+   E('lateral','Lateral Raise','Bahu samping','12-15','45-60',0.8,'Berdiri tegak, angkat dumbbell ke samping hingga sejajar bahu, turunkan perlahan.',{s:'3-4'}),
+   E('tricep','Triceps Overhead Extension','Trisep','10-12','60-90',1,'Pegang satu dumbbell dengan dua tangan di atas kepala, tekuk siku ke belakang lalu kembali.',{s:'3-4'}),
+   E('pushup','Push Up','Dada, bahu, trisep','10-15','60-90',1,'Tangan selebar bahu, tubuh lurus dari kepala ke tumit, turunkan badan lalu dorong kembali.',{s:'3-4'}),
+   E('front','Dumbbell Front Raise','Bahu depan','12-15','45-60',0.8,'Pegang dumbbell di depan paha, angkat ke depan sejajar bahu, turunkan perlahan.',{s:'3-4'}),
+   E('fly','Dumbbell Fly','Dada','10-12','60-90',0.8,'Berbaring, kedua tangan sedikit menekuk, buka ke samping hingga terasa regangan di dada, lalu kembali.',{s:'3-4',alt:'Tanpa bangku: floor fly di lantai.'})],
+  cool:[['Chest Stretch','Tahan 15-30 detik per sisi'],['Triceps Stretch','Tahan 15-30 detik per sisi'],['Shoulder Stretch','Tahan 15-30 detik per sisi']]},
+ pull:{n:'Pull Day',sub:'Punggung, biceps, rear delt · dumbbell 6 kg',
+  warm:[['Arm Circles','10x ke depan, 10x ke belakang'],['Torso Twist','10x ke kanan, 10x ke kiri'],['Neck Rotation','10x ke kanan, 10x ke kiri'],['Band Pull Apart','Tarik ke samping 10-15x (tanpa band: rentangkan tangan ke samping)']],
+  main:[E('bentrow','Bent Over Row','Punggung (lats & tengah)','10-12','60-90',1.2,'Kaki selebar bahu, badan sedikit condong, punggung lurus, tarik dumbbell ke arah pinggang, siku dekat badan.',{mv:'row'}),
+   E('onearm','One Arm Row','Punggung (lats)','10-12','60-90',1.2,'Tumpu satu tangan dan satu lutut, tarik dumbbell ke arah pinggang, punggung tetap lurus.',{per:1,mv:'row',alt:'Tanpa bangku: tumpu tangan di kursi.'}),
+   E('revfly','Reverse Fly','Rear delt','12-15','60-90',0.8,'Posisi sedikit membungkuk, buka tangan ke samping dengan siku sedikit ditekuk.'),
+   E('bicurl','Biceps Curl','Biceps','10-12','60-90',0.8,'Berdiri tegak, siku dekat badan, angkat dumbbell ke arah bahu, turunkan perlahan.',{mv:'curl'}),
+   E('hammer','Hammer Curl','Biceps & lengan bawah','10-12','60-90',0.8,'Pegang dumbbell posisi netral (telapak menghadap badan), angkat ke arah bahu dengan kontrol.',{mv:'curl'}),
+   E('rdl','Romanian Deadlift','Punggung bawah & hamstring','10-12','60-90',1.2,'Lutut sedikit ditekuk, dorong pinggul ke belakang, rasakan tarikan di hamstring, punggung tetap lurus.'),
+   E('pullover','Single Arm Pullover','Punggung (lats)','10-12','60-90',1,'Berbaring di lantai, lutut ditekuk, tarik dumbbell dari depan ke belakang kepala lalu kembali.',{per:1}),
+   E('reardelt','Rear Delt Row','Rear delt & punggung atas','10-12','60-90',1,'Posisi sedikit membungkuk, tarik dumbbell ke arah wajah dengan siku terbuka.')],
+  cool:[['Lat Stretch','Tahan 20-30 detik'],['Cross Body Stretch','Tahan 20-30 detik per sisi'],['Biceps Stretch','Tahan 20-30 detik'],['Child Pose (opsional)','Tahan 30-60 detik']]},
+ legs:{n:'Leg Day',sub:'Paha, hamstring, bokong, betis · dumbbell 6 kg',
+  warm:[['High Knee','30 detik sampai 1 menit'],['Leg Swing','10-15x per kaki'],['Side Leg Swing','10-15x per kaki'],['Walking Lunge','10-12 langkah per kaki'],['Glute Bridge','12-15 repetisi, tahan 2 detik']],
+  main:[E('goblet','Goblet Squat','Paha depan & bokong','10-15','60-90',1.2,'Pegang 1 dumbbell di depan dada, jongkok hingga paha sejajar lantai, dorong tumit untuk berdiri.'),
+   E('bulg','Bulgarian Split Squat','Paha depan & bokong','10-12','60-90',1.2,'Letakkan satu kaki di belakang (di kursi/permukaan stabil), turun hingga lutut depan 90 derajat.',{per:1,alt:'Pakai kursi yang stabil.'}),
+   E('rdl','Romanian Deadlift','Hamstring & bokong','10-12','60-90',1.2,'Pegang dumbbell di samping tubuh, dorong pinggul ke belakang, punggung tetap lurus.'),
+   E('legcurl','Lying Leg Curl','Hamstring','10-15','60-90',1,'Berbaring tengkurap, pegang dumbbell di belakang kaki. Tekuk lutut, angkat beban ke atas.'),
+   E('calf','Standing Calf Raise','Betis','15-20','60-90',0.6,'Berdiri tegak, pegang dumbbell, angkat tumit setinggi mungkin, turun perlahan.'),
+   E('stepup','Step Up','Paha depan & bokong','10-12','60-90',1.2,'Naik ke permukaan yang stabil, dorong tumit, lalu turun terkontrol.',{per:1,alt:'Pakai kursi atau bangku yang stabil.'}),
+   E('lunge','Walking Lunge','Paha & bokong','12-15','60-90',1,'Langkahkan kaki ke depan, turunkan tubuh hingga lutut belakang hampir menyentuh lantai.',{per:1}),
+   E('jump','Jump Squat','Power & daya tahan','10-12','60-90',1.2,'Mulai dari posisi squat, lompat setinggi mungkin, mendarat dengan lembut.')],
+  cool:[['Hamstring Stretch','Tahan 20-30 detik'],['Quad Stretch','Tahan 20-30 detik per sisi'],['Butterfly Stretch','Tahan 20-30 detik'],['Glute Stretch','Tahan 20-30 detik per sisi'],['Calf Stretch','Tahan 20-30 detik per sisi']]},
+ cardio:{n:'Cardio Treadmill',sub:'Pemanasan, lari/jalan, pendinginan',
+  warm:[['Neck Rotation','10x ke kanan, 10x ke kiri'],['Arm Swings','10-15x ke depan dan ke belakang'],['Torso Twist','10-15x ke kanan dan kiri'],['High Knee','30 detik sampai 1 menit'],['Butt Kick','30 detik sampai 1 menit'],['Jumping Jack','30 detik sampai 1 menit']],
+  main:[E('tm','Treadmill','Kardio','20-30','-',8,'Mulai jalan santai, naikkan kecepatan bertahap sesuai kemampuan.',{u:'menit'})],
+  cool:[['Hamstring Stretch','Tahan 15-30 detik per kaki'],['Quad Stretch','Tahan 15-30 detik per kaki'],['Calf Stretch','Tahan 15-30 detik per kaki'],['Hip Flexor Stretch','Tahan 15-30 detik per kaki'],['Lower Back Stretch','Tahan 15-30 detik'],['Shoulder Stretch','Tahan 15-30 detik per sisi']]}
+};
+const VERSION='v5 - Program PPL';
 const RANKS=['E','D','C','B','A','S'];
 const STEPS={easy:[600,900,1250,1600,2350],medium:[1300,2100,3000,5000,8400],hard:[2500,3800,6700,10500,15100],extreme:[5000,8400,12600,20000,33600]};
 const DIFF={easy:{n:'Easy',t:50,d:'Target 50/hari'},medium:{n:'Medium',t:100,d:'Target 100/hari'},hard:{n:'Hard',t:200,d:'Target 200/hari'},extreme:{n:'Extreme',t:300,d:'Target 300/hari'}};
@@ -87,7 +147,7 @@ const $=s=>document.querySelector(s);
 const today=()=>new Date().toLocaleDateString('en-CA');
 let S=null,tab='status',draft={diff:'easy',photo:null};
 try{S=JSON.parse(localStorage.getItem('sysq')||'null')}catch(e){}
-if(S){if(!S.quests)S.quests=[{id:'q0',mv:'pushup',t:DIFF[S.diff].t}];S.qseen=S.qseen||['pushup'];S.hidden=S.hidden||[];S.custom=S.custom||[];S.mvLv=S.mvLv||{}}
+if(S){S.sched=S.sched||DEFSCHED.slice();S.sess=S.sess||{};if(!S.quests)S.quests=[{id:'q0',mv:'pushup',t:DIFF[S.diff].t}];S.qseen=S.qseen||['pushup'];S.hidden=S.hidden||[];S.custom=S.custom||[];S.mvLv=S.mvLv||{}}
 function save(){try{localStorage.setItem('sysq',JSON.stringify(S))}catch(e){toast('Penyimpanan penuh, foto mungkin tidak tersimpan')}}
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -105,19 +165,23 @@ function unlocked(m,st=S){const di=ORD.indexOf(st.diff);if(di<ORD.indexOf(m.min)
 function dayRec(){const k=today();const d=S.days[k]||(S.days[k]={pushup:0,exp:0});if(!d.m)d.m={};return d}
 function cnt(day,id){return id==='pushup'?day.pushup:((day.m&&day.m[id])||0)}
 function syncQuests(){let ch=false;allMoves().forEach(m=>{if(!S.qseen.includes(m.id)&&unlocked(m)){S.qseen.push(m.id);if(!S.quests.some(q=>q.mv===m.id))S.quests.push({id:'q'+m.id,mv:m.id,t:m.u==='menit'?20:30});ch=true}});if(ch)save()}
-function addReps(id,n){
- if(!n||n<=0)return;const m=allMoves().find(x=>x.id===id),before={l:levelOf(S.exp),r:rankOf(S.exp,S.diff),open:allMoves().filter(x=>unlocked(x)).map(x=>x.id)};
- const day=dayRec();let gain=0;
- const qq=S.quests.find(q=>q.mv===id),t=qq?qq.t:(id==='pushup'?DIFF[S.diff].t:null),c0=cnt(day,id),over=t==null?0:Math.max(0,c0+n-Math.max(t,c0));gain=(n-over)*m.x+over*m.x*1.5;
- if(id==='pushup'){day.pushup+=n;if(day.pushup>S.record)S.record=day.pushup}else day.m[id]=(day.m[id]||0)+n;
- gain=Math.round(gain*10)/10;S.exp=Math.round((S.exp+gain)*10)/10;day.exp=Math.round((day.exp+gain)*10)/10;
- save();toast(`+${gain} EXP  (${m.n} x ${n})`);
- const after={l:levelOf(S.exp),r:rankOf(S.exp,S.diff)};const q=[];
+function snap(){return{l:levelOf(S.exp),r:rankOf(S.exp,S.diff),open:allMoves().filter(x=>unlocked(x)).map(x=>x.id)}}
+function applyGain(gain,msg,before,extra){
+ const day=dayRec();gain=Math.round(gain*10)/10;S.exp=Math.round((S.exp+gain)*10)/10;day.exp=Math.round((day.exp+gain)*10)/10;
+ save();toast(`+${gain} EXP  (${msg})`);
+ const after={l:levelOf(S.exp),r:rankOf(S.exp,S.diff)};const q=(extra||[]).slice();
  if(after.r>before.r)q.push(['RANK UP!',`Rank ${RANKS[before.r]} → ${RANKS[after.r]}`,'']);
  allMoves().filter(x=>unlocked(x)&&!before.open.includes(x.id)).forEach(x=>q.push(['GERAKAN BARU',x.n,'Gerakan baru terbuka!']));
  if(after.l>before.l){q.push(['LEVEL UP!',`Level ${before.l} → ${after.l}`,'']);
   S.rewards.filter(r=>r.lv>before.l&&r.lv<=after.l).forEach(r=>q.push(['HADIAH TERBUKA!',`Level ${r.lv}`,esc(r.text)]))}
  showQ(q);render();
+}
+function addReps(id,n){
+ if(!n||n<=0)return;const m=allMoves().find(x=>x.id===id),before={l:levelOf(S.exp),r:rankOf(S.exp,S.diff),open:allMoves().filter(x=>unlocked(x)).map(x=>x.id)};
+ const day=dayRec();let gain=0;
+ const qq=S.quests.find(q=>q.mv===id),t=qq?qq.t:(id==='pushup'?DIFF[S.diff].t:null),c0=cnt(day,id),over=t==null?0:Math.max(0,c0+n-Math.max(t,c0));gain=(n-over)*m.x+over*m.x*1.5;
+ if(id==='pushup'){day.pushup+=n;if(day.pushup>S.record)S.record=day.pushup}else day.m[id]=(day.m[id]||0)+n;
+ applyGain(gain,`${m.n} x ${n}`,before);
 }
 function showQ(q){if(!q.length)return;const[h,a,b]=q.shift();const p=$('#pop');
  p.innerHTML=`<div class="panel"><div class="tag">[ SYSTEM ]</div><h2>${h}</h2><div style="font-size:18px;margin:8px 0">${a}</div><div class="small" style="margin-bottom:14px">${b}</div><button class="big" id="pok">OK</button></div>`;
@@ -146,18 +210,19 @@ function register(a){
  $('#rp').onchange=async e=>{draft.photo=await readPhoto(e.target.files[0]);const p=$('#pv');if(draft.photo){p.src=draft.photo;p.style.display='block'}};
  $('#go').onclick=()=>{keep();const h=+draft.h,w=+draft.w;
   if(!draft.name.trim())return toast('Isi nama dulu');if(!(h>50&&h<260))return toast('Tinggi tidak valid');if(!(w>20&&w<400))return toast('Berat tidak valid');if(!draft.photo)return toast('Foto full body wajib diisi');
-  S={name:draft.name.trim(),h,w,diff:draft.diff,exp:0,record:0,days:{},quests:[{id:'q0',mv:'pushup',t:DIFF[draft.diff].t}],qseen:['pushup'],rewards:[],hidden:[],custom:[],mvLv:{},photos:[{d:today(),w,img:draft.photo}]};save();draft={diff:'easy',photo:null};tab='status';render()}}
+  S={name:draft.name.trim(),h,w,diff:draft.diff,exp:0,record:0,days:{},quests:[{id:'q0',mv:'pushup',t:DIFF[draft.diff].t}],qseen:['pushup'],rewards:[],hidden:[],custom:[],mvLv:{},sched:DEFSCHED.slice(),sess:{},photos:[{d:today(),w,img:draft.photo}]};save();draft={diff:'easy',photo:null};tab='status';render()}}
 
 function main(a){
  const r=rankOf(S.exp,S.diff),lv=levelOf(S.exp),dr=DIFF[S.diff];
  let body='';
  if(tab==='status')body=statusView(r,lv);
  if(tab==='train')body=trainView();
+ if(tab==='plan')body=planView();
  if(tab==='reward')body=rewardView(lv);
  if(tab==='prog')body=progView();
  if(tab==='set')body=settingView();
  a.innerHTML=`<div class="title">SYSTEM</div>${body}
- <nav>${[['status','Status'],['train','Latihan'],['reward','Hadiah'],['prog','Progres'],['set','Setting']].map(([k,n])=>`<button data-t="${k}" class="${tab===k?'on':''}">${n}</button>`).join('')}</nav>`;
+ <nav>${[['status','Status'],['plan','Program'],['train','Latihan'],['reward','Hadiah'],['prog','Progres'],['set','Setting']].map(([k,n])=>`<button data-t="${k}" class="${tab===k?'on':''}">${n}</button>`).join('')}</nav>`;
  a.querySelectorAll('nav [data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();scrollTo(0,0)});
  bind();
 }
@@ -173,7 +238,7 @@ let CH={p:'d',m:'exp'};
 function questPanel(){const day=dayRec(),mv=allMoves();
  const rows=S.quests.map(q=>{const m=mv.find(x=>x.id===q.mv);if(!m||!unlocked(m))return'';const c=cnt(day,q.mv),p=Math.min(100,c/q.t*100);
  return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between"><span>${esc(m.n)}${c>=q.t?' ✔':''}</span><span>${c}/${q.t} ${m.u==='menit'?'mnt':''}</span></div><div class="bar q"><i style="width:${p}%"></i></div></div>`}).join('');
- return `<div class="panel"><h3>Daily Quest</h3>${rows||'<div class="small">Belum ada quest. Tambah di tab Setting.</div>'}<div class="small">Di atas target dapat bonus EXP 1,5x. Atur jenis dan target quest di tab Setting.</div></div>`}
+ return `<div class="panel"><h3>Daily Quest</h3>${planLine()}${rows||'<div class="small">Belum ada quest. Tambah di tab Setting.</div>'}<div class="small">Di atas target dapat bonus EXP 1,5x. Atur jenis dan target quest di tab Setting.</div></div>`}
 function questSet(){const mv=allMoves(),av=mv.filter(m=>unlocked(m)&&!S.quests.some(q=>q.mv===m.id));
  return `<div class="panel"><h3>Atur Daily Quest</h3><div class="small" style="margin-bottom:6px">Gerakan yang baru terbuka otomatis masuk quest dengan target bawaan. Ubah target atau hapus sesukamu.</div>${S.quests.map(q=>{const m=mv.find(x=>x.id===q.mv);return m?`<div class="mv"><div><div class="n">${esc(m.n)}</div><div class="small">target per hari (${m.u})</div></div><div class="row" style="flex:none;gap:6px"><input type="number" min="1" data-qt="${q.id}" value="${q.t}"><button class="danger" data-qd="${q.id}">Hapus</button></div></div>`:''}).join('')}
  ${av.length?`<label>TAMBAH QUEST</label><div class="row"><select id="qm">${av.map(m=>`<option value="${m.id}">${esc(m.n)}</option>`).join('')}</select><input id="qv" type="number" inputmode="numeric" placeholder="target" value="30"></div><button class="big" id="qadd" style="margin-top:10px">Tambah Quest</button>`:'<div class="small">Semua gerakan terbuka sudah ada di quest.</div>'}</div>`}
@@ -189,6 +254,49 @@ function chartPanel(){const sr=series(),n=sr.length,mx=Math.max(1,...sr.map(x=>x
  return `<div class="panel"><h3>Grafik Latihan</h3><div class="row">${B('d','p','Harian')}${B('w','p','Mingguan')}${B('m','p','Bulanan')}</div><div class="row" style="margin-top:6px">${B('exp','m','EXP')}${B('pu','m','Push Up')}</div>
  <svg viewBox="0 0 320 142" style="width:100%;margin-top:10px"><line x1="10" y1="120" x2="310" y2="120" stroke="#2b6dff"/>${bars}</svg>
  <div class="small" style="text-align:center">${CH.p==='d'?'14 hari terakhir':CH.p==='w'?'8 minggu terakhir (tiap batang = 7 hari berakhir di tanggal itu)':'6 bulan terakhir'} · Total ${tot.toLocaleString('id')} ${u} · Rata-rata ${Math.round(tot/n).toLocaleString('id')}/${CH.p==='d'?'hari':CH.p==='w'?'minggu':'bulan'}</div></div>`}
+function getSess(){return S.sess[today()]}
+function weekDates(){const n=new Date(),idx=(n.getDay()+6)%7,out=[];for(let i=0;i<7;i++){const d=new Date(n);d.setDate(n.getDate()-idx+i);out.push(d.toLocaleDateString('en-CA'))}return out}
+function planLine(){const ti=(new Date().getDay()+6)%7,t=S.sched[ti],ss=getSess();let txt;
+ if(ss&&ss.done)txt=`${PLAN[ss.type].n} selesai ✔ (+${ss.gain} EXP)`;else if(ss)txt=`${PLAN[ss.type].n} sedang berjalan`;else if(t==='rest')txt='Rest Day, waktunya pulih';else txt=`${PLAN[t].n} belum dimulai (buka tab Program)`;
+ return `<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #12306e"><div class="small">PROGRAM HARI INI</div><div>${txt}</div></div>`}
+function startSess(type){const P=PLAN[type];S.sess[today()]={type,warm:P.warm.map(()=>false),cool:P.cool.map(()=>false),sets:{},ns:{},done:false,gain:0,bonus:0};save();render();scrollTo(0,0)}
+function fillSet(id,n){const ss=getSess();if(!ss)return;const a=ss.sets[id]||(ss.sets[id]=[]);ss.ns=ss.ns||{};const nn=ss.ns[id]||3;let k=0;while(k<nn&&(+a[k]||0)>0)k++;if(k>=nn)ss.ns[id]=nn+1;for(let j=0;j<k;j++)if(a[j]==null)a[j]=0;a[k]=n;save();render();toast(`Set ${k+1}: ${n} push up dicatat`)}
+function liveExp(){const ss=getSess(),e=document.getElementById('sx');if(!ss||!e)return;const P=PLAN[ss.type];let g=0;P.main.forEach(ex=>{(ss.sets[ex.id]||[]).forEach(v=>g+=(+v||0)*ex.x)});e.textContent=Math.round(g*10)/10}
+function exCard(ex,ss){const isM=ex.u==='menit',n=isM?1:((ss.ns&&ss.ns[ex.id])||3),a=ss.sets[ex.id]||[];let ins='';
+ for(let k=0;k<n;k++)ins+=`<div class="sst"><small>${isM?'Menit':'Set '+(k+1)}</small><input type="number" inputmode="numeric" min="0" data-ex="${ex.id}" data-k="${k}" value="${a[k]||''}" placeholder="${isM?'30':ex.r}"></div>`;
+ return `<div class="exc"><div class="n">${ex.n} <span class="small">· ${ex.m}</span></div><div class="small">${isM?'Target 20-30 menit · 8 EXP/menit':`${ex.s} set × ${ex.r} rep${ex.per?' (per sisi)':''} · istirahat ${ex.rs} detik · ${ex.x} EXP/rep`}</div><div class="small" style="margin:4px 0;color:#9fb4de">${ex.c}${ex.alt?`<br><i>${ex.alt}</i>`:''}</div><div class="sets">${ins}</div><div class="row" style="margin-top:8px">${isM?'':`<button data-addset="${ex.id}">+ Set</button>`}${ex.id==='pushup'?'<button id="scam">Hitung Otomatis</button>':''}</div></div>`}
+function sessView(ss){const P=PLAN[ss.type];
+ const chk=(arr,list,k)=>list.map((w,i)=>`<label class="chk"><input type="checkbox" data-${k}="${i}" ${arr[i]?'checked':''}><span><b>${w[0]}</b><br><small>${w[1]}</small></span></label>`).join('');
+ return `<div class="panel"><h3>${P.n}</h3><div class="small">${P.sub}</div><div style="margin-top:8px">EXP sesi (belum termasuk bonus): <b id="sx">0</b></div><div class="small" style="margin-top:4px">Bonus: +10 pemanasan lengkap, +10 pendinginan lengkap, +30 semua gerakan utama minimal 3 set.</div></div>
+ <div class="panel"><h3>Pemanasan (5-10 menit)</h3>${chk(ss.warm,P.warm,'w')}</div>
+ <div class="panel"><h3>Latihan Utama</h3>${P.main.map(ex=>exCard(ex,ss)).join('')}</div>
+ <div class="panel"><h3>Pendinginan (5-10 menit)</h3>${chk(ss.cool,P.cool,'cl')}</div>
+ <button class="big" id="sfin">Selesai & Klaim EXP</button><button class="danger big" id="scan" style="margin-top:10px">Batalkan Sesi</button>`}
+function finishSess(){
+ const ss=getSess();if(!ss||ss.done)return;const P=PLAN[ss.type],day=dayRec();let gain=0,full=true;
+ P.main.forEach(ex=>{const a=(ss.sets[ex.id]||[]).map(v=>+v||0),tot=a.reduce((x,y)=>x+y,0),ns=a.filter(v=>v>0).length;gain+=tot*ex.x;if(ns<(ex.u==='menit'?1:3))full=false});
+ if(gain<=0)return toast('Isi minimal satu gerakan dulu');
+ if(!confirm('Selesaikan sesi dan klaim EXP?'))return;
+ const wOk=ss.warm.every(Boolean),cOk=ss.cool.every(Boolean),bonus=(wOk?10:0)+(cOk?10:0)+(full?30:0),before=snap();
+ P.main.forEach(ex=>{const tot=(ss.sets[ex.id]||[]).reduce((x,y)=>x+(+y||0),0);if(!(tot>0))return;
+  if(ex.id==='pushup'){day.pushup+=tot;if(day.pushup>S.record)S.record=day.pushup}else if(ex.mv)day.m[ex.mv]=(day.m[ex.mv]||0)+tot});
+ const total=Math.round((gain+bonus)*10)/10;ss.done=true;ss.gain=total;ss.bonus=bonus;
+ applyGain(total,`${P.n} selesai`,before,[[(full&&wOk&&cOk)?'DUNGEON CLEAR!':'SESI SELESAI',P.n,`+${total} EXP (bonus ${bonus})`]]);
+}
+function planView(){
+ const ti=(new Date().getDay()+6)%7,t=S.sched[ti],ss=getSess();
+ if(ss&&!ss.done)return sessView(ss);
+ const wk=weekDates(),done=wk.filter(d=>S.sess[d]&&S.sess[d].done).length,planned=S.sched.filter(x=>x!=='rest').length;
+ const week=`<div class="week">${S.sched.map((x,i)=>{const d=S.sess[wk[i]];return `<div class="wd ${i===ti?'now':''} ${x==='rest'?'rs':''}"><b>${DN[i]}</b><span>${ABBR[x]}</span>${d&&d.done?'<em>✔</em>':''}</div>`}).join('')}</div>`;
+ let nxt='';if(t==='rest'||(ss&&ss.done)){for(let k=1;k<=7;k++){const j=(ti+k)%7;if(S.sched[j]!=='rest'){nxt=`Sesi berikutnya: ${DNF[j]} - ${PLAN[S.sched[j]].n}`;break}}}
+ const opts=['push','pull','legs','cardio'].map(k=>`<option value="${k}" ${k===(t==='rest'?'push':t)?'selected':''}>${PLAN[k].n}</option>`).join('');
+ let head;
+ if(ss&&ss.done)head=`<div class="panel"><h3>Sesi Hari Ini</h3><div style="font-size:18px">${PLAN[ss.type].n} selesai ✔</div><div class="small">+${ss.gain} EXP (termasuk bonus ${ss.bonus})</div><div class="small" style="margin-top:6px">${nxt}</div></div>`;
+ else if(t==='rest')head=`<div class="panel"><h3>Rest Day</h3><div style="font-size:18px">Hari ini jadwalnya istirahat</div><div class="small" style="margin-top:6px">Otot tumbuh saat pulih, jadi istirahat bagian dari latihan. Tidak ada quest dan tidak ada hukuman.</div><div class="small" style="margin-top:6px">${nxt}</div></div>
+  <div class="panel"><h3>Tetap Mau Latihan?</h3><select id="pt">${opts}</select><button class="big" id="pstart" style="margin-top:10px">Mulai Sesi</button></div>`;
+ else head=`<div class="panel"><h3>Sesi Hari Ini</h3><div style="font-size:18px">${PLAN[t].n}</div><div class="small">${PLAN[t].sub}</div><div class="small" style="margin-top:6px">${PLAN[t].main.length} gerakan utama · sekitar 45-75 menit</div><label>PILIH SESI</label><select id="pt">${opts}</select><button class="big" id="pstart" style="margin-top:10px">Mulai Sesi</button></div>`;
+ const sched=`<div class="panel"><h3>Atur Jadwal</h3>${DNF.map((n,i)=>`<div class="mv"><span>${n}</span><select data-sd="${i}" style="width:170px">${['push','pull','legs','cardio','rest'].map(k=>`<option value="${k}" ${S.sched[i]===k?'selected':''}>${k==='rest'?'Rest':PLAN[k].n}</option>`).join('')}</select></div>`).join('')}<label>PRESET CEPAT</label><div class="grid4"><button data-pre="0">6 hari</button><button data-pre="1">4 hari</button><button data-pre="2">3 hari</button></div><div class="small" style="margin-top:8px">Jadwal bebas kamu ubah kapan saja. Hari tanpa sesi atau yang terlewat tidak mengurangi apa pun.</div></div>`;
+ return `<div class="panel"><h3>Jadwal Minggu Ini</h3>${week}<div class="small" style="margin-top:8px">Minggu ini: ${done} dari ${planned} sesi selesai</div></div>${head}${sched}`}
 function trainView(){
  return `<div class="panel"><h3>Push Up Otomatis</h3><div class="small" style="margin-bottom:10px">Taruh HP di lantai, layar menghadap atas, tepat di bawah dada. Kamera depan membaca bayangan/gelap saat dada turun, tanpa perlu menyentuh layar.</div><button class="big" id="auto">Mulai Hitung Otomatis</button></div>
  <div class="panel"><h3>Input Manual</h3>${allMoves().map(m=>{const ok=unlocked(m);return `<div class="mv ${ok?'':'lock'}"><div><div class="n">${esc(m.n)}</div><div class="small">${ok?`${m.x} EXP / ${m.u==='menit'?'menit':'rep'}`:lockMsg(m)}</div></div>
@@ -219,11 +327,22 @@ function progView(){
 
 function bind(){
  const g=id=>document.getElementById(id);
- if(g('auto'))g('auto').onclick=startCounter;
+ if(g('auto'))g('auto').onclick=()=>startCounter();
  document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const i=g('in-'+b.dataset.add),n=parseFloat(i.value);if(!(n>0))return toast('Isi jumlah dulu');addReps(b.dataset.add,n);i.value=''});
  if(g('radd'))g('radd').onclick=()=>{const lv=parseInt(g('rl').value),t=g('rt').value.trim();if(!(lv>0)||!t)return toast('Isi level dan hadiah');S.rewards.push({id:Date.now(),lv,text:t});save();render()};
  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{S.rewards=S.rewards.filter(r=>r.id!=b.dataset.del);save();render()});
  if(g('padd'))g('padd').onclick=async()=>{const img=await readPhoto(g('pf').files[0]),w=parseFloat(g('pw').value);if(!img)return toast('Pilih foto dulu');if(!(w>20))return toast('Berat tidak valid');S.w=w;S.photos.push({d:today(),w,img});save();toast('Foto progres tersimpan');render()};
+ document.querySelectorAll('[data-ex]').forEach(i=>i.oninput=()=>{const ss=getSess();if(!ss)return;const id=i.dataset.ex,k=+i.dataset.k,a=ss.sets[id]||(ss.sets[id]=[]);for(let j=0;j<k;j++)if(a[j]==null)a[j]=0;a[k]=Math.max(0,parseFloat(i.value)||0);save();liveExp()});
+ document.querySelectorAll('[data-w]').forEach(i=>i.onchange=()=>{const ss=getSess();if(ss){ss.warm[+i.dataset.w]=i.checked;save()}});
+ document.querySelectorAll('[data-cl]').forEach(i=>i.onchange=()=>{const ss=getSess();if(ss){ss.cool[+i.dataset.cl]=i.checked;save()}});
+ document.querySelectorAll('[data-addset]').forEach(b=>b.onclick=()=>{const ss=getSess(),id=b.dataset.addset;ss.ns=ss.ns||{};ss.ns[id]=(ss.ns[id]||3)+1;save();render()});
+ if(g('scam'))g('scam').onclick=()=>startCounter(n=>fillSet('pushup',n));
+ if(g('sfin'))g('sfin').onclick=finishSess;
+ if(g('scan'))g('scan').onclick=()=>{if(confirm('Batalkan sesi ini? Catatan set yang sudah diisi akan dihapus.')){delete S.sess[today()];save();render()}};
+ if(g('pstart'))g('pstart').onclick=()=>startSess(g('pt').value);
+ document.querySelectorAll('[data-sd]').forEach(x=>x.onchange=()=>{S.sched[+x.dataset.sd]=x.value;save();render()});
+ document.querySelectorAll('[data-pre]').forEach(b=>b.onclick=()=>{S.sched=PRE[+b.dataset.pre].slice();save();toast('Jadwal diterapkan');render()});
+ if(g('sx'))liveExp();
  document.querySelectorAll('[data-cp]').forEach(b=>b.onclick=()=>{CH.p=b.dataset.cp;render()});
  document.querySelectorAll('[data-cm]').forEach(b=>b.onclick=()=>{CH.m=b.dataset.cm;render()});
  document.querySelectorAll('[data-qt]').forEach(i=>i.onchange=()=>{const q=S.quests.find(x=>x.id===i.dataset.qt);if(q){q.t=Math.max(1,parseInt(i.value)||1);save();toast('Target diubah')}});
@@ -238,7 +357,7 @@ function bind(){
 
 /* ---- auto counter (camera brightness) ---- */
 let CT=null;
-async function startCounter(){
+async function startCounter(cb){
  const ov=$('#ov');let count=0,near=false,base=0,t0=Date.now(),stream=null,wl=null,sens=.5,lastLevel=0;
  ov.innerHTML=`<div class="tag">[ PUSH UP COUNTER ]</div><div id="cnt">0</div><div id="stat" class="far">KALIBRASI...</div><div class="small" id="info" style="margin-bottom:12px"></div>
  <div style="width:100%;max-width:340px"><label>SENSITIVITAS <span id="sv"></span></label><input type="range" id="sl" min="25" max="75" value="50">
@@ -267,7 +386,7 @@ async function startCounter(){
  document.getElementById('cnt').onclick=()=>{count++;tickUI();beep(700,.08)};
  const stop=()=>{clearInterval(CT);if(stream)stream.getTracks().forEach(t=>t.stop());try{wl&&wl.release()}catch(e){}ov.classList.remove('show');ov.innerHTML=''};
  document.getElementById('cancel').onclick=stop;
- document.getElementById('fin').onclick=()=>{const n=count;stop();if(n>0)addReps('pushup',n);else toast('Belum ada push up terhitung')};
+ document.getElementById('fin').onclick=()=>{const n=count;stop();if(n>0){if(cb)cb(n);else addReps('pushup',n)}else toast('Belum ada push up terhitung')};
 }
 render();
 if('serviceWorker' in navigator){
