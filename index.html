@@ -72,6 +72,7 @@ video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 <div class="pop" id="pop"></div>
 <div id="toast"></div>
 <script>
+const VERSION='v4 - Quest & Grafik';
 const RANKS=['E','D','C','B','A','S'];
 const STEPS={easy:[600,900,1250,1600,2350],medium:[1300,2100,3000,5000,8400],hard:[2500,3800,6700,10500,15100],extreme:[5000,8400,12600,20000,33600]};
 const DIFF={easy:{n:'Easy',t:50,d:'Target 50/hari'},medium:{n:'Medium',t:100,d:'Target 100/hari'},hard:{n:'Hard',t:200,d:'Target 200/hari'},extreme:{n:'Extreme',t:300,d:'Target 300/hari'}};
@@ -204,7 +205,7 @@ function settingView(){
  return questSet()+`<div class="panel"><h3>Kelola Gerakan</h3><div class="small" style="margin-bottom:6px">Atur level minimal untuk membuka tiap gerakan. Push Up tidak bisa dihapus karena dipakai penghitung otomatis.</div>${mv.map(m=>`<div class="mv"><div><div class="n">${esc(m.n)}</div><div class="small">${m.x} EXP / ${m.u}</div></div><div class="row" style="flex:none;gap:6px"><div style="text-align:center"><div class="small">Buka di Lv</div><input type="number" min="0" data-lv="${m.id}" value="${lvOf(m)}"></div>${m.id==='pushup'?'':`<button class="danger" data-rm="${m.id}">Hapus</button>`}</div></div>`).join('')}</div>
  <div class="panel"><h3>Tambah Gerakan</h3><label>NAMA</label><input id="mn" placeholder="mis. Sit Up"><div class="row"><div><label>SATUAN</label><select id="mu"><option>repetisi</option><option>menit</option></select></div><div><label>EXP/SATUAN</label><input id="mx" type="number" step="0.1" inputmode="decimal" value="1"></div><div><label>BUKA DI LV</label><input id="ml" type="number" inputmode="numeric" value="1"></div></div><button class="big" id="madd" style="margin-top:10px">Tambah Gerakan</button></div>
  ${hid.length?`<div class="panel"><h3>Gerakan Dihapus</h3>${hid.map(m=>`<div class="mv"><span>${m.n}</span><button data-rs="${m.id}">Pulihkan</button></div>`).join('')}</div>`:''}
- <div class="panel"><h3>Data</h3><button class="danger big" id="reset">Reset Semua Data</button></div>`}
+ <div class="panel"><h3>Data</h3><button class="danger big" id="reset">Reset Semua Data</button><div class="small" style="margin-top:10px;text-align:center">Versi aplikasi: ${VERSION}</div></div>`}
 function rewardView(lv){
  const rs=[...S.rewards].sort((a,b)=>a.lv-b.lv);
  return `<div class="panel"><h3>Tambah Hadiah</h3><div class="row"><input id="rl" type="number" inputmode="numeric" placeholder="Level" style="flex:.5"><input id="rt" placeholder="Hadiah, mis. makan es krim"></div><button class="big" id="radd" style="margin-top:10px">Simpan Hadiah</button></div>
@@ -269,7 +270,11 @@ async function startCounter(){
  document.getElementById('fin').onclick=()=>{const n=count;stop();if(n>0)addReps('pushup',n);else toast('Belum ada push up terhitung')};
 }
 render();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator){
+ const had=!!navigator.serviceWorker.controller;let rl=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!rl){rl=true;location.reload()}});
+ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();document.addEventListener('visibilitychange',()=>{if(!document.hidden)r.update()})}).catch(()=>{});
+}
 </script>
 </body>
 </html>
